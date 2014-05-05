@@ -70,7 +70,12 @@ public class Atlas {
 					page = new AtlasPage();
 					page.name = line;
 
-					page.format = Format.valueOf(readValue(reader));
+					if (readTuple(reader) == 2) { // size is only optional for an atlas packed with an old TexturePacker.
+						page.width = Integer.parseInt(tuple[0]);
+						page.height = Integer.parseInt(tuple[1]);
+						readTuple(reader);
+					}
+					page.format = Format.valueOf(tuple[0]);
 
 					readTuple(reader);
 					page.minFilter = TextureFilter.valueOf(tuple[0]);
@@ -161,7 +166,7 @@ public class Atlas {
 		return line.substring(colon + 1).trim();
 	}
 
-	/** Returns the number of tuple values read (2 or 4). */
+	/** Returns the number of tuple values read (1, 2 or 4). */
 	static int readTuple(BufferedReader reader) throws IOException {
 		String line = reader.readLine();
 		int colon = line.indexOf(':');
@@ -170,11 +175,7 @@ public class Atlas {
 		int i = 0, lastMatch = colon + 1;
 		for (i = 0; i < 3; i++) {
 			int comma = line.indexOf(',', lastMatch);
-			if (comma == -1) {
-				if (i == 0)
-					throw new RuntimeException("Invalid line: " + line);
-				break;
-			}
+			if (comma == -1) break;
 			tuple[i] = line.substring(lastMatch, comma).trim();
 			lastMatch = comma + 1;
 		}
