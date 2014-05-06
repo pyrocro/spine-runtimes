@@ -40,7 +40,7 @@ public class SkinnedMeshAttachment extends Attachment {
 
 	int[] bones;
 	float[] weights, uvs, regionUVs;
-	int[] triangles;
+	short[] triangles;
 	float regionOffsetX, regionOffsetY, regionWidth, regionHeight, regionOriginalWidth, regionOriginalHeight;
 	float regionU, regionV, regionU2, regionV2;
 	boolean regionRotate;
@@ -143,11 +143,11 @@ public class SkinnedMeshAttachment extends Attachment {
 		this.uvs = uvs;
 	}
 
-	public int[] getTriangles() {
+	public short[] getTriangles() {
 		return triangles;
 	}
 
-	public void setTriangles(int[] triangles) {
+	public void setTriangles(short[] triangles) {
 		this.triangles = triangles;
 	}
 

@@ -84,11 +84,11 @@ public class Atlas {
 					String direction = readValue(reader);
 					page.uWrap = TextureWrap.ClampToEdge;
 					page.vWrap = TextureWrap.ClampToEdge;
-					if (direction == "x")
+					if (direction.equals("x"))
 						page.uWrap = TextureWrap.Repeat;
-					else if (direction == "y")
+					else if (direction.equals("y"))
 						page.vWrap = TextureWrap.Repeat;
-					else if (direction == "xy")
+					else if (direction.equals("xy"))
 						page.uWrap = page.vWrap = TextureWrap.Repeat;
 
 					textureLoader.load(page, FilenameUtils.concat(imagesDir, line));
@@ -198,7 +198,7 @@ public class Atlas {
 	public AtlasRegion findRegion(String name) {
 		int rsize = regions.size();
 		for (int i = 0; i < rsize; i++)
-			if (regions.get(i).name == name) return regions.get(i);
+			if (regions.get(i).name.equals(name)) return regions.get(i);
 		return null;
 	}
 

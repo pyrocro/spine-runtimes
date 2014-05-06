@@ -30,71 +30,52 @@
 
 package com.esotericsoftware.spine;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import playn.core.Game;
-import playn.core.Json;
+import playn.core.GroupLayer;
+import playn.core.Image;
+import playn.core.ImageLayer;
 import playn.core.PlayN;
-import playn.java.JavaPlatform;
+import playn.core.util.Callback;
 
-public abstract class ATest extends Game.Default {
+import com.esotericsoftware.spine.Atlas.AtlasPage;
+import com.esotericsoftware.spine.Atlas.TextureLoader;
 
-	// Default game update rate, in ms.
-	private static final int UPDATE_RATE = 25;
+/**
+ * Custom {@link TextureLoader} for the PlayN platform.
+ * Textures in PlayN are stored as Images, which are then stored in the scene graphs as ImageLayers.
+ * 
+ * @author mbarbeaux
+ */
+public class PlayNTextureLoader implements TextureLoader {
 
-	public ATest() {
-		super(UPDATE_RATE);
+	// Internal hidden Grouplayer for managing ImageLayers.
+	GroupLayer groupLayer;
+
+	public PlayNTextureLoader(GroupLayer parent) {
+		groupLayer = PlayN.graphics().createGroupLayer();
+		groupLayer.setVisible(false);
+		parent.add(groupLayer);
 	}
-	
-	protected HashMap<String, Object> convert(Json.Object o) {
-		HashMap<String, Object> map = new HashMap<String, Object>();
-		for (String key : o.keys()) {
-			if (o.isArray(key)) {
-				map.put(key, convert(o.getArray(key)));
-			} else if (o.isObject(key)) {
-				map.put(key, convert(o.getObject(key)));
-			} else if (o.isBoolean(key)) {
-				map.put(key, o.getBoolean(key));
-			} else if (o.isNumber(key)) {
-				map.put(key, o.getNumber(key));
-			} else if (o.isString(key)) {
-				map.put(key, o.getString(key));
-			} else {
-				map.put(key, null);
+
+	public void unload(Object texture) {
+		((ImageLayer) texture).destroy();
+	}
+
+	public void load(final AtlasPage page, final String path) {
+		Image image = PlayN.assets().getImage(path);
+		ImageLayer layer = PlayN.graphics().createImageLayer(image);
+		groupLayer.add(layer);
+		page.rendererObject = layer;
+		image.addCallback(new Callback<Image>() {
+			@Override
+			public void onFailure(Throwable cause) {
+				PlayN.log().error("Error while loading image " + path, cause);
 			}
-		}
-		return map;
-	}
-	
-	protected ArrayList<Object> convert(Json.Array a) {
-		ArrayList<Object> list = new ArrayList<Object>(a.length());
-		for (int i = 0; i < a.length(); i++) {
-			if (a.isArray(i)) {
-				list.add(convert(a.getArray(i)));
-			} else if (a.isObject(i)) {
-				list.add(convert(a.getObject(i)));
-			} else if (a.isBoolean(i)) {
-				list.add(a.getBoolean(i));
-			} else if (a.isNumber(i)) {
-				list.add(a.getNumber(i));
-			} else if (a.isString(i)) {
-				list.add(a.getString(i));
-			} else {
-				list.add(null);
+
+			@Override
+			public void onSuccess(Image result) {
+				PlayN.log().info("Successfully loaded image " + path + " ; size = " + result.width() + " x " + result.height());
 			}
-		}
-		return list;
-	}
-	
-	public static void run(final ATest test) {
-		final JavaPlatform.Config config = new JavaPlatform.Config();
-		config.width = 800;
-		config.height = 600;
-		final JavaPlatform platform = JavaPlatform.register(config);
-		platform.setTitle(test.getClass().getSimpleName() + " PlayN Spine");
-		platform.assets().setPathPrefix("");
-		PlayN.run(test);
+		});
 	}
 
 }

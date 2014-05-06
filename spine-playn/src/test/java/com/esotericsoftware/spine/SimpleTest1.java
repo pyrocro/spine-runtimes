@@ -30,9 +30,70 @@
 
 package com.esotericsoftware.spine;
 
+import java.io.ByteArrayInputStream;
+
+import playn.core.PlayN;
+import playn.core.util.Callback;
+
 public class SimpleTest1 extends ATest {
 
 	public void init() {
+		String[] paths = new String[] { "goblins/", "goblins/", "spineboy/" };
+		String[] names = new String[] { "goblins", "goblins-ffd", "spineboy" };
+		for (int i = 0; i < paths.length; i++) {
+			final String path = paths[i];
+			final String name = names[i];
+
+			final String atlasFile = path + name + ".atlas";
+			PlayN.assets().getBytes(atlasFile, new Callback<byte[]>() {
+				@Override
+				public void onFailure(Throwable cause) {
+					PlayN.log().error("Error while loading " + atlasFile, cause);
+				}
+
+				@Override
+				public void onSuccess(byte[] result) {
+					Atlas _temp = null;
+					try {
+						_temp = new Atlas(new ByteArrayInputStream(result), path, new PlayNTextureLoader(PlayN.graphics().rootLayer()));
+					} catch (Exception e) {
+						PlayN.log().error("Error while loading " + atlasFile, e);
+					}
+					final Atlas atlas = _temp;
+
+					final String spineJsonFile = path + name + ".json";
+					PlayN.assets().getText(spineJsonFile, new Callback<String>() {
+						@Override
+						public void onFailure(Throwable cause) {
+							PlayN.log().error("Error while loading " + spineJsonFile, cause);
+						}
+
+						@Override
+						public void onSuccess(String result) {
+							final SkeletonJson json = new SkeletonJson(atlas);
+							final SkeletonData data1 = json.readSkeletonData(name, convert(PlayN.json().parse(result)));
+							assert data1 != null;
+							PlayN.log().info("SkeletonJSON successfully loaded for " + name);
+
+							/*final String spineBinaryFile = path + name + ".skel";
+							PlayN.assets().getBytes(spineBinaryFile, new Callback<byte[]>() {
+								@Override
+								public void onFailure(Throwable cause) {
+									PlayN.log().error("Error while loading " + spineBinaryFile, cause);
+								}
+
+								@Override
+								public void onSuccess(byte[] result) {
+									final SkeletonBinary binary = new SkeletonBinary(atlas);
+									final SkeletonData data2 = binary.readSkeletonData(name, new ByteArrayInputStream(result));
+									PlayN.log().info("SkeletonBinary successfully loaded for " + name);
+								}
+							});*/
+						}
+					});
+				}
+			});
+		}
 	}
 
 	@Override
