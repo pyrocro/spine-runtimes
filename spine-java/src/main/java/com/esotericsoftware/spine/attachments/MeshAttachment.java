@@ -48,7 +48,7 @@ public class MeshAttachment extends Attachment {
 	private int[] edges;
 	private float width, height;
 
-	Object renderObject;
+	Object rendererObject;
 
 	public MeshAttachment(String name) {
 		super(name);
@@ -161,12 +161,12 @@ public class MeshAttachment extends Attachment {
 		this.path = path;
 	}
 
-	public Object getRenderObject() {
-		return renderObject;
+	public Object getRendererObject() {
+		return rendererObject;
 	}
 
-	public void setRenderObject(Object renderObject) {
-		this.renderObject = renderObject;
+	public void setRendererObject(Object rendererObject) {
+		this.rendererObject = rendererObject;
 	}
 
 	public float getRegionU() {

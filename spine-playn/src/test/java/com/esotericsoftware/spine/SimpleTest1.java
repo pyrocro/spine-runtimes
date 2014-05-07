@@ -30,80 +30,141 @@
 
 package com.esotericsoftware.spine;
 
-import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
 
+import playn.core.ImageLayer;
+import playn.core.InternalTransform;
 import playn.core.PlayN;
 import playn.core.util.Callback;
 
+import com.esotericsoftware.spine.Atlas.AtlasRegion;
+import com.esotericsoftware.spine.attachments.RegionAttachment;
+
 public class SimpleTest1 extends ATest {
 
+	Atlas altas;
+	Skeleton skeleton;
+	AnimationState state;
+	boolean loaded = false;
+
 	public void init() {
-		String[] paths = new String[] { "goblins/", "goblins/", "spineboy/" };
-		String[] names = new String[] { "goblins", "goblins-ffd", "spineboy" };
-		for (int i = 0; i < paths.length; i++) {
-			final String path = paths[i];
-			final String name = names[i];
+		final String dir = "spineboy";
+		final String basename = "spineboy";
 
-			final String atlasFile = path + name + ".atlas";
-			PlayN.assets().getBytes(atlasFile, new Callback<byte[]>() {
-				@Override
-				public void onFailure(Throwable cause) {
-					PlayN.log().error("Error while loading " + atlasFile, cause);
-				}
+		// Load the Atlas.
+		SpineLoader.getAtlas(dir, basename, PlayN.graphics().rootLayer(), new Callback<Atlas>() {
+			@Override
+			public void onFailure(Throwable cause) {
+				PlayN.log().error("Error while loading Atlas " + basename, cause);
+			}
 
-				@Override
-				public void onSuccess(byte[] result) {
-					Atlas _temp = null;
-					try {
-						_temp = new Atlas(new ByteArrayInputStream(result), path, new PlayNTextureLoader(PlayN.graphics().rootLayer()));
-					} catch (Exception e) {
-						PlayN.log().error("Error while loading " + atlasFile, e);
+			@Override
+			public void onSuccess(final Atlas result) {
+				altas = result;
+
+				// Load the Skeleton, scaling it at 60% of its original size.
+				SpineLoader.getSkeleton(dir, basename, 1f, false, SimpleTest1.this.altas, new Callback<Skeleton>() {
+					@Override
+					public void onFailure(Throwable cause) {
+						PlayN.log().error("Error while loading Skeleton " + basename, cause);
 					}
-					final Atlas atlas = _temp;
 
-					final String spineJsonFile = path + name + ".json";
-					PlayN.assets().getText(spineJsonFile, new Callback<String>() {
-						@Override
-						public void onFailure(Throwable cause) {
-							PlayN.log().error("Error while loading " + spineJsonFile, cause);
-						}
+					@Override
+					public void onSuccess(final Skeleton result) {
+						skeleton = result; // Skeleton holds skeleton state (bone positions, slot attachments, etc).
 
-						@Override
-						public void onSuccess(String result) {
-							final SkeletonJson json = new SkeletonJson(atlas);
-							final SkeletonData data1 = json.readSkeletonData(name, convert(PlayN.json().parse(result)));
-							assert data1 != null;
-							PlayN.log().info("SkeletonJSON successfully loaded for " + name);
+						skeleton.setX(PlayN.graphics().width() / 2);
+						skeleton.setY(PlayN.graphics().height() / 2);
 
-							/*final String spineBinaryFile = path + name + ".skel";
-							PlayN.assets().getBytes(spineBinaryFile, new Callback<byte[]>() {
-								@Override
-								public void onFailure(Throwable cause) {
-									PlayN.log().error("Error while loading " + spineBinaryFile, cause);
-								}
+						AnimationStateData stateData = new AnimationStateData(skeleton.getData()); // Defines mixing (crossfading) between animations.
+						stateData.setMix("walk", "jump", 0.2f);
+						stateData.setMix("jump", "walk", 0.2f);
 
-								@Override
-								public void onSuccess(byte[] result) {
-									final SkeletonBinary binary = new SkeletonBinary(atlas);
-									final SkeletonData data2 = binary.readSkeletonData(name, new ByteArrayInputStream(result));
-									PlayN.log().info("SkeletonBinary successfully loaded for " + name);
-								}
-							});*/
-						}
-					});
-				}
-			});
-		}
+						state = new AnimationState(stateData); // Holds the animation state for a skeleton (current animation, time, etc).
+						state.setTimeScale(0.5f); // Slow all animations down to 50% speed.
+						state.setAnimation(0, "walk", true);
+						state.addAnimation(0, "jump", false, 2); // Jump after 2 seconds.
+						state.addAnimation(0, "walk", true, 0); // Run after the jump.
+
+						skeleton.updateWorldTransform();
+						loaded = true;
+					}
+				});
+			}
+		});
 	}
 
 	@Override
 	public void update(int delta) {
-		super.update(delta);
+		if (loaded) {
+		}
 	}
+
+	int lastTick = -1;
 
 	@Override
 	public void paint(float alpha) {
-		super.paint(alpha);
+		if (loaded) {
+			float delta = 0f;
+			int tick = PlayN.tick();
+			if (lastTick != -1) {
+				delta = (tick - lastTick) / 1000f;
+			}
+			lastTick = tick;
+
+			state.update(delta);
+			state.apply(skeleton);
+			skeleton.updateWorldTransform();
+
+			ArrayList<Slot> drawOrder = skeleton.drawOrder;
+			for (Slot slot : drawOrder) {
+				if (slot.getAttachment() != null && slot.getAttachment() instanceof RegionAttachment) {
+					RegionAttachment attachment = (RegionAttachment) slot.getAttachment();
+					ImageLayer layer = (ImageLayer) ((AtlasRegion) attachment.getRendererObject()).page.rendererObject;
+
+					float[] vertices = new float[8];
+					attachment.computeWorldVertices(skeleton.x, skeleton.y, slot.getBone(), vertices);
+					// item.vertexTL.Position.X = vertices[RegionAttachment.X1];
+					// item.vertexTL.Position.Y = vertices[RegionAttachment.Y1];
+					// item.vertexTL.Position.Z = 0;
+					// item.vertexBL.Position.X = vertices[RegionAttachment.X2];
+					// item.vertexBL.Position.Y = vertices[RegionAttachment.Y2];
+					// item.vertexBL.Position.Z = 0;
+					// item.vertexBR.Position.X = vertices[RegionAttachment.X3];
+					// item.vertexBR.Position.Y = vertices[RegionAttachment.Y3];
+					// item.vertexBR.Position.Z = 0;
+					// item.vertexTR.Position.X = vertices[RegionAttachment.X4];
+					// item.vertexTR.Position.Y = vertices[RegionAttachment.Y4];
+					// item.vertexTR.Position.Z = 0;
+					//
+					float[] uvs = attachment.getUvs();
+					// item.vertexTL.TextureCoordinate.X = uvs[RegionAttachment.X1];
+					// item.vertexTL.TextureCoordinate.Y = uvs[RegionAttachment.Y1];
+					// item.vertexBL.TextureCoordinate.X = uvs[RegionAttachment.X2];
+					// item.vertexBL.TextureCoordinate.Y = uvs[RegionAttachment.Y2];
+					// item.vertexBR.TextureCoordinate.X = uvs[RegionAttachment.X3];
+					// item.vertexBR.TextureCoordinate.Y = uvs[RegionAttachment.Y3];
+					// item.vertexTR.TextureCoordinate.X = uvs[RegionAttachment.X4];
+					// item.vertexTR.TextureCoordinate.Y = uvs[RegionAttachment.Y4];
+
+					int top = RegionAttachment.Y3;
+					int left = RegionAttachment.X1;
+					int right = RegionAttachment.X3;
+					int bottom = RegionAttachment.Y1;
+					// PlayN.log().debug(
+					// vertices[left] + " - " + vertices[top] + " - " + vertices[right] + " - " + vertices[bottom] + " - " + uvs[left] + " - "
+					// + uvs[top] + " - " + uvs[right] + " - " + uvs[bottom]);
+
+					PlayN.graphics()
+							.ctx()
+							.quadShader(null)
+							.prepareTexture(layer.image().ensureTexture(), layer.tint())
+							.addQuad((InternalTransform) layer.transform(), vertices[left], vertices[top], vertices[right], vertices[bottom],
+									uvs[left], uvs[top], uvs[right], uvs[bottom]);
+
+				}
+			}
+		}
 	}
 
 	public static final void main(final String[] args) {

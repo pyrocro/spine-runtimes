@@ -49,7 +49,7 @@ public class RegionAttachment extends Attachment {
 	float r = 1, g = 1, b = 1, a = 1;
 
 	String path;
-	Object renderObject;
+	Object rendererObject;
 
 	public RegionAttachment(String name) {
 		super(name);
@@ -224,12 +224,12 @@ public class RegionAttachment extends Attachment {
 		this.path = path;
 	}
 
-	public Object getRenderObject() {
-		return renderObject;
+	public Object getRendererObject() {
+		return rendererObject;
 	}
 
-	public void setRenderObject(Object renderObject) {
-		this.renderObject = renderObject;
+	public void setRendererObject(Object rendererObject) {
+		this.rendererObject = rendererObject;
 	}
 
 	public float getRegionOffsetX() {
