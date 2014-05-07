@@ -44,7 +44,7 @@ public class SkinnedMeshAttachment extends Attachment {
 	float regionOffsetX, regionOffsetY, regionWidth, regionHeight, regionOriginalWidth, regionOriginalHeight;
 	float regionU, regionV, regionU2, regionV2;
 	boolean regionRotate;
-	float r = 1, g = 1, b = 1, a = 1;
+	float r = 1f, g = 1f, b = 1f, a = 1f;
 
 	String path;
 	Object rendererObject;
@@ -76,8 +76,8 @@ public class SkinnedMeshAttachment extends Attachment {
 			}
 		}
 	}
-	
-	public void computeWorldVertices (float x, float y, Slot slot, float[] worldVertices) {
+
+	public void computeWorldVertices(float x, float y, Slot slot, float[] worldVertices) {
 		ArrayList<Bone> skeletonBones = slot.getSkeleton().getBones();
 		float[] weights = this.weights;
 		int[] bones = this.bones;
@@ -86,7 +86,7 @@ public class SkinnedMeshAttachment extends Attachment {
 				float wx = 0, wy = 0;
 				int nn = bones[v++] + v;
 				for (; v < nn; v++, b += 3) {
-					Bone bone = (Bone)skeletonBones.get(bones[v]);
+					Bone bone = (Bone) skeletonBones.get(bones[v]);
 					float vx = weights[b], vy = weights[b + 1], weight = weights[b + 2];
 					wx += (vx * bone.getM00() + vy * bone.getM01() + bone.getWorldX()) * weight;
 					wy += (vx * bone.getM10() + vy * bone.getM11() + bone.getWorldY()) * weight;
@@ -100,7 +100,7 @@ public class SkinnedMeshAttachment extends Attachment {
 				float wx = 0, wy = 0;
 				int nn = bones[v++] + v;
 				for (; v < nn; v++, b += 3, f += 2) {
-					Bone bone = (Bone)skeletonBones.get(bones[v]);
+					Bone bone = (Bone) skeletonBones.get(bones[v]);
 					float vx = weights[b] + ffd[f], vy = weights[b + 1] + ffd[f + 1], weight = weights[b + 2];
 					wx += (vx * bone.getM00() + vy * bone.getM01() + bone.getWorldX()) * weight;
 					wy += (vx * bone.getM10() + vy * bone.getM11() + bone.getWorldY()) * weight;

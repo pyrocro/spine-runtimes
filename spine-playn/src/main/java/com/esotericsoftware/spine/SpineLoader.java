@@ -31,8 +31,6 @@
 package com.esotericsoftware.spine;
 
 import java.io.ByteArrayInputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
 
 import playn.core.GroupLayer;
 import playn.core.Image;
@@ -58,87 +56,54 @@ public class SpineLoader {
 	/**
 	 * Load asynchronously a Spine Atlas from a file.
 	 * 
-	 * @param directory
-	 *            Directory (inside the PlayN assets folder) where the Atlas file is located
-	 * @param basename
-	 *            Base name of the Atlas (e.g. if base name is "spineboy", it will locate the atlas file as "spineboy.atlas")
+	 * @param path
+	 *            Path (inside the PlayN assets folder) where the Atlas file is located, ex: "spineboy/spineboy.atlas"
 	 * @param parentLayer
 	 *            Parent layer for layers associated to this
 	 * @param callback
 	 *            Callback when the Atlas has finished loading (or crashed...)
 	 */
-	public static final void getAtlas(final String directory, final String basename, final GroupLayer parentLayer, final Callback<Atlas> callback) {
-		try {
-
-			// Let's begin by fetching the content of the Atlas file.
-			final String atlasFile = FilenameUtils.concat(directory, basename + ".atlas");
-			PlayN.assets().getBytes(atlasFile, new Callback<byte[]>() {
-
-				@Override
-				public void onFailure(Throwable cause) {
-					callback.onFailure(cause);
-				}
-
-				@Override
-				public void onSuccess(byte[] result) {
-
-					// Now we can load the Atlas object.
-					final Atlas atlas = new Atlas(new ByteArrayInputStream(result), directory, new SpineTextureLoader(parentLayer));
-					callback.onSuccess(atlas);
-				}
-			});
-
-		} catch (Throwable cause) {
-			callback.onFailure(cause);
-		}
+	public static final void getAtlas(final String path, final GroupLayer parentLayer, final Callback<Atlas> callback) {
+		new Atlas(path, new SpineTextureLoader(parentLayer), callback);
 	}
 
 	/**
 	 * Load asynchronously a Spine Skeleton from a file.
 	 * 
-	 * @param directory
-	 *            Directory (inside the PlayN assets folder) where the Skeleton files are located
-	 * @param basename
-	 *            Base name of the Skeleton (e.g. if base name is "spineboy", it will locate the atlas file as "spineboy.atlas" and the skeleton file
-	 *            as "spineboy.json" or "spineboy.skel", depending it is binary or not)
-	 * @param binary
-	 *            Indicate if the Skeleton must be loaded as a binary *.skel file (TRUE) or as a JSON *.json file (FALSE)
+	 * @param path
+	 *            Path (inside the PlayN assets folder) where the Skeleton file is located, ex: "spineboy/spineboy.json". Note that if the file
+	 *            extension is "json", a JSON loader will be used, else it will be considered as binary.
 	 * @param atlas
 	 *            Atlas
 	 * @param callback
 	 *            Callback when the skeleton has finished loading (or crashed...)
 	 */
-	public static final void getSkeleton(final String directory, final String basename, final boolean binary, final Atlas atlas,
-			final Callback<Skeleton> callback) {
-		getSkeleton(directory, basename, 1f, binary, atlas, callback);
+	public static final void getSkeleton(final String path, final Atlas atlas, final Callback<Skeleton> callback) {
+		getSkeleton(path, 1f, atlas, callback);
 	}
 
 	/**
 	 * Load asynchronously a Spine Skeleton from a file.
 	 * 
-	 * @param directory
-	 *            Directory (inside the PlayN assets folder) where the Skeleton files are located
-	 * @param basename
-	 *            Base name of the Skeleton (e.g. if base name is "spineboy", it will locate the atlas file as "spineboy.atlas" and the skeleton file
-	 *            as "spineboy.json" or "spineboy.skel", depending it is binary or not)
+	 * @param path
+	 *            Path (inside the PlayN assets folder) where the Skeleton file is located, ex: "spineboy/spineboy.json". Note that if the file
+	 *            extension is "json", a JSON loader will be used, else it will be considered as binary.
 	 * @param scale
 	 *            If you want to scale the Skeleton
-	 * @param binary
-	 *            Indicate if the Skeleton must be loaded as a binary *.skel file (TRUE) or as a JSON *.json file (FALSE)
 	 * @param atlas
 	 *            Atlas
 	 * @param callback
 	 *            Callback when the skeleton has finished loading (or crashed...)
 	 */
-	public static final void getSkeleton(final String directory, final String basename, final float scale, final boolean binary, final Atlas atlas,
-			final Callback<Skeleton> callback) {
+	public static final void getSkeleton(final String path, final float scale, final Atlas atlas, final Callback<Skeleton> callback) {
 		try {
+			final String extension = FilenameUtils.getExtension(path);
 
 			// Loading the skeleton Data using the correct method.
-			if (binary) {
-				getSkeletonUsingBinary(directory, basename, scale, atlas, callback);
+			if ("json".equalsIgnoreCase(extension)) {
+				getSkeletonUsingJson(path, scale, atlas, callback);
 			} else {
-				getSkeletonUsingJson(directory, basename, scale, atlas, callback);
+				getSkeletonUsingBinary(path, scale, atlas, callback);
 			}
 
 		} catch (Throwable cause) {
@@ -146,16 +111,14 @@ public class SpineLoader {
 		}
 	}
 
-	private static final void getSkeletonUsingBinary(final String directory, final String basename, final float scale, final Atlas atlas,
-			final Callback<Skeleton> callback) {
+	private static final void getSkeletonUsingBinary(final String path, final float scale, final Atlas atlas, final Callback<Skeleton> callback) {
 
 		// Let's begin by fetching the content of the Skeleton file.
-		final String skeletonFile = FilenameUtils.concat(directory, basename + ".skel");
-		PlayN.assets().getBytes(skeletonFile, new Callback<byte[]>() {
+		PlayN.assets().getBytes(path, new Callback<byte[]>() {
 
 			@Override
 			public void onFailure(Throwable cause) {
-				PlayN.log().error("Error while loading Spine skeleton file " + skeletonFile, cause);
+				PlayN.log().error("Error while loading Spine BINARY skeleton file " + path, cause);
 				callback.onFailure(cause);
 			}
 
@@ -165,7 +128,7 @@ public class SpineLoader {
 				// Load the Skeleton data using binary.
 				final SkeletonBinary binary = new SkeletonBinary(new AtlasAttachmentLoader(atlas));
 				binary.setScale(scale);
-				final SkeletonData skeletonData = binary.readSkeletonData(basename, new ByteArrayInputStream(result));
+				final SkeletonData skeletonData = binary.readSkeletonData(FilenameUtils.getBaseName(path), new ByteArrayInputStream(result));
 
 				// Return the Skeleton to the callback.
 				callback.onSuccess(new Skeleton(skeletonData));
@@ -173,83 +136,32 @@ public class SpineLoader {
 		});
 	}
 
-	private static final void getSkeletonUsingJson(final String directory, final String basename, final float scale, final Atlas atlas,
-			final Callback<Skeleton> callback) {
+	private static final void getSkeletonUsingJson(final String path, final float scale, final Atlas atlas, final Callback<Skeleton> callback) {
 
 		// Let's begin by fetching the content of the Skeleton file.
-		final String skeletonFile = FilenameUtils.concat(directory, basename + ".json");
-		PlayN.assets().getText(skeletonFile, new Callback<String>() {
+		PlayN.assets().getText(path, new Callback<String>() {
 
 			@Override
 			public void onFailure(Throwable cause) {
-				PlayN.log().error("Error while loading Spine skeleton file " + skeletonFile, cause);
+				PlayN.log().error("Error while loading Spine JSON skeleton file " + path, cause);
 				callback.onFailure(cause);
 			}
 
 			@Override
 			public void onSuccess(String result) {
 
+				// Parse the String result to obtain a PlayN JSON object.
+				Json.Object jsonResult = PlayN.json().parse(result);
+
 				// Load the Skeleton data using JSON.
 				final SkeletonJson json = new SkeletonJson(new AtlasAttachmentLoader(atlas));
 				json.setScale(scale);
-				final SkeletonData skeletonData = json.readSkeletonData(basename, convert(PlayN.json().parse(result)));
+				final SkeletonData skeletonData = json.readSkeletonData(FilenameUtils.getBaseName(path), jsonResult);
 
 				// Return the Skeleton to the callback.
 				callback.onSuccess(new Skeleton(skeletonData));
 			}
 		});
-	}
-
-	/**
-	 * Convert a PlayN Json.Object into an HashMap
-	 * 
-	 * @param o
-	 * @return
-	 */
-	private static final HashMap<String, Object> convert(Json.Object o) {
-		HashMap<String, Object> map = new HashMap<String, Object>();
-		for (String key : o.keys()) {
-			if (o.isArray(key)) {
-				map.put(key, convert(o.getArray(key)));
-			} else if (o.isObject(key)) {
-				map.put(key, convert(o.getObject(key)));
-			} else if (o.isBoolean(key)) {
-				map.put(key, o.getBoolean(key));
-			} else if (o.isNumber(key)) {
-				map.put(key, o.getNumber(key));
-			} else if (o.isString(key)) {
-				map.put(key, o.getString(key));
-			} else {
-				map.put(key, null);
-			}
-		}
-		return map;
-	}
-
-	/**
-	 * Convert a PlayN Json.Array into an ArrayList
-	 * 
-	 * @param a
-	 * @return
-	 */
-	private static final ArrayList<Object> convert(Json.Array a) {
-		ArrayList<Object> list = new ArrayList<Object>(a.length());
-		for (int i = 0; i < a.length(); i++) {
-			if (a.isArray(i)) {
-				list.add(convert(a.getArray(i)));
-			} else if (a.isObject(i)) {
-				list.add(convert(a.getObject(i)));
-			} else if (a.isBoolean(i)) {
-				list.add(a.getBoolean(i));
-			} else if (a.isNumber(i)) {
-				list.add(a.getNumber(i));
-			} else if (a.isString(i)) {
-				list.add(a.getString(i));
-			} else {
-				list.add(null);
-			}
-		}
-		return list;
 	}
 
 	/**
@@ -272,12 +184,23 @@ public class SpineLoader {
 			((ImageLayer) texture).destroy();
 		}
 
-		public void load(final AtlasPage page, final String path) {
-			Image image = PlayN.assets().getImageSync(path); // FIXME make async for HTML5, but we need width and height as soon as possible, so... ??
-			page.rendererObject = PlayN.graphics().createImageLayer(image);
-			page.width = (int) image.width();
-			page.height = (int) image.height();
-			PlayN.log().info("Successfully loaded image " + path + " ; size = " + image.width() + " x " + image.height());
+		public void load(final AtlasPage page, final String path, final Callback<Void> callback) {
+			Image image = PlayN.assets().getImage(path);
+			image.addCallback(new Callback<Image>() {
+				@Override
+				public void onFailure(Throwable cause) {
+					callback.onFailure(cause);
+				}
+
+				@Override
+				public void onSuccess(Image result) {
+					page.rendererObject = PlayN.graphics().createImageLayer(result);
+					page.width = (int) result.width();
+					page.height = (int) result.height();
+					PlayN.log().info("Successfully loaded image " + path + " ; size = " + result.width() + " x " + result.height());
+					callback.onSuccess(null);
+				}
+			});
 		}
 	}
 

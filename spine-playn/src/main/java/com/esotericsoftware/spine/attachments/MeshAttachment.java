@@ -41,7 +41,7 @@ public class MeshAttachment extends Attachment {
 	float regionOffsetX, regionOffsetY, regionWidth, regionHeight, regionOriginalWidth, regionOriginalHeight;
 	float regionU, regionV, regionU2, regionV2;
 	boolean regionRotate;
-	float r = 1f, g = 1f, b = 1f, a = 1f;
+	float r = 1f, g = 1f, b = 1f, a = 1;
 
 	// Nonessential.
 	private int hullLength;
@@ -129,20 +129,20 @@ public class MeshAttachment extends Attachment {
 		this.r = r;
 	}
 
-	public float getB() {
-		return b;
-	}
-
-	public void setB(float b) {
-		this.b = b;
-	}
-
 	public float getG() {
 		return g;
 	}
 
 	public void setG(float g) {
 		this.g = g;
+	}
+
+	public float getB() {
+		return b;
+	}
+
+	public void setB(float b) {
+		this.b = b;
 	}
 
 	public float getA() {

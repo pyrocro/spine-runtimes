@@ -34,45 +34,50 @@ public class SlotData {
 	final String name;
 	final BoneData boneData;
 	float r = 1f, g = 1f, b = 1f, a = 1f;
-	
+
 	String attachmentName;
 	boolean additiveBlending;
 
-	SlotData () {
+	SlotData() {
 		name = null;
 		boneData = null;
 	}
 
-	public SlotData (String name, BoneData boneData) {
-		if (name == null) throw new IllegalArgumentException("name cannot be null.");
-		if (boneData == null) throw new IllegalArgumentException("boneData cannot be null.");
+	public SlotData(String name, BoneData boneData) {
+		if (name == null)
+			throw new IllegalArgumentException("name cannot be null.");
+		if (boneData == null)
+			throw new IllegalArgumentException("boneData cannot be null.");
 		this.name = name;
 		this.boneData = boneData;
 	}
 
-	public String getName () {
+	public String getName() {
 		return name;
 	}
 
-	public BoneData getBoneData () {
+	public BoneData getBoneData() {
 		return boneData;
 	}
 
-	/** @param attachmentName May be null. */
-	public void setAttachmentName (String attachmentName) {
+	/**
+	 * @param attachmentName
+	 *            May be null.
+	 */
+	public void setAttachmentName(String attachmentName) {
 		this.attachmentName = attachmentName;
 	}
 
 	/** @return May be null. */
-	public String getAttachmentName () {
+	public String getAttachmentName() {
 		return attachmentName;
 	}
 
-	public boolean getAdditiveBlending () {
+	public boolean getAdditiveBlending() {
 		return additiveBlending;
 	}
 
-	public void setAdditiveBlending (boolean additiveBlending) {
+	public void setAdditiveBlending(boolean additiveBlending) {
 		this.additiveBlending = additiveBlending;
 	}
 
@@ -108,7 +113,7 @@ public class SlotData {
 		this.a = a;
 	}
 
-	public String toString () {
+	public String toString() {
 		return name;
 	}
 }

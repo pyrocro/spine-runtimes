@@ -48,14 +48,14 @@ public class SimpleTest1 extends ATest {
 	boolean loaded = false;
 
 	public void init() {
-		final String dir = "spineboy";
-		final String basename = "spineboy";
+		final String atlasPath = "spineboy/spineboy.atlas";
+		final String skeletonPath = "spineboy/spineboy.json";
 
 		// Load the Atlas.
-		SpineLoader.getAtlas(dir, basename, PlayN.graphics().rootLayer(), new Callback<Atlas>() {
+		SpineLoader.getAtlas(atlasPath, PlayN.graphics().rootLayer(), new Callback<Atlas>() {
 			@Override
 			public void onFailure(Throwable cause) {
-				PlayN.log().error("Error while loading Atlas " + basename, cause);
+				PlayN.log().error("Error while loading Atlas " + atlasPath, cause);
 			}
 
 			@Override
@@ -63,10 +63,10 @@ public class SimpleTest1 extends ATest {
 				altas = result;
 
 				// Load the Skeleton, scaling it at 60% of its original size.
-				SpineLoader.getSkeleton(dir, basename, 1f, false, SimpleTest1.this.altas, new Callback<Skeleton>() {
+				SpineLoader.getSkeleton(skeletonPath, 0.6f, SimpleTest1.this.altas, new Callback<Skeleton>() {
 					@Override
 					public void onFailure(Throwable cause) {
-						PlayN.log().error("Error while loading Skeleton " + basename, cause);
+						PlayN.log().error("Error while loading Skeleton " + skeletonPath, cause);
 					}
 
 					@Override

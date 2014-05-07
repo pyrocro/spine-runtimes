@@ -37,12 +37,13 @@ public class Slot {
 	final Bone bone;
 	private final Skeleton skeleton;
 	float r, g, b, a;
+
 	Attachment attachment;
 	private float attachmentTime;
 	private float[] attachmentVertices = new float[0];
 	int attachmentVerticesCount;
 
-	Slot () {
+	Slot() {
 		data = null;
 		bone = null;
 		skeleton = null;
@@ -52,10 +53,13 @@ public class Slot {
 		a = 1f;
 	}
 
-	public Slot (SlotData data, Skeleton skeleton, Bone bone) {
-		if (data == null) throw new IllegalArgumentException("data cannot be null.");
-		if (skeleton == null) throw new IllegalArgumentException("skeleton cannot be null.");
-		if (bone == null) throw new IllegalArgumentException("bone cannot be null.");
+	public Slot(SlotData data, Skeleton skeleton, Bone bone) {
+		if (data == null)
+			throw new IllegalArgumentException("data cannot be null.");
+		if (skeleton == null)
+			throw new IllegalArgumentException("skeleton cannot be null.");
+		if (bone == null)
+			throw new IllegalArgumentException("bone cannot be null.");
 		this.data = data;
 		this.skeleton = skeleton;
 		this.bone = bone;
@@ -63,10 +67,13 @@ public class Slot {
 	}
 
 	/** Copy constructor. */
-	public Slot (Slot slot, Skeleton skeleton, Bone bone) {
-		if (slot == null) throw new IllegalArgumentException("slot cannot be null.");
-		if (skeleton == null) throw new IllegalArgumentException("skeleton cannot be null.");
-		if (bone == null) throw new IllegalArgumentException("bone cannot be null.");
+	public Slot(Slot slot, Skeleton skeleton, Bone bone) {
+		if (slot == null)
+			throw new IllegalArgumentException("slot cannot be null.");
+		if (skeleton == null)
+			throw new IllegalArgumentException("skeleton cannot be null.");
+		if (bone == null)
+			throw new IllegalArgumentException("bone cannot be null.");
 		data = slot.data;
 		this.skeleton = skeleton;
 		this.bone = bone;
@@ -78,15 +85,15 @@ public class Slot {
 		attachmentTime = slot.attachmentTime;
 	}
 
-	public SlotData getData () {
+	public SlotData getData() {
 		return data;
 	}
 
-	public Skeleton getSkeleton () {
+	public Skeleton getSkeleton() {
 		return skeleton;
 	}
 
-	public Bone getBone () {
+	public Bone getBone() {
 		return bone;
 	}
 
@@ -123,33 +130,38 @@ public class Slot {
 	}
 
 	/** @return May be null. */
-	public Attachment getAttachment () {
+	public Attachment getAttachment() {
 		return attachment;
 	}
 
-	/** Sets the attachment, resets {@link #getAttachmentTime()}, and clears {@link #getAttachmentVertices()}.
-	 * @param attachment May be null. */
-	public void setAttachment (Attachment attachment) {
-		if (this.attachment == attachment) return;
+	/**
+	 * Sets the attachment, resets {@link #getAttachmentTime()}, and clears {@link #getAttachmentVertices()}.
+	 * 
+	 * @param attachment
+	 *            May be null.
+	 */
+	public void setAttachment(Attachment attachment) {
+		if (this.attachment == attachment)
+			return;
 		this.attachment = attachment;
 		attachmentTime = skeleton.time;
 		attachmentVerticesCount = 0;
 	}
 
-	public void setAttachmentTime (float time) {
+	public void setAttachmentTime(float time) {
 		attachmentTime = skeleton.time - time;
 	}
 
 	/** Returns the time since the attachment was set. */
-	public float getAttachmentTime () {
+	public float getAttachmentTime() {
 		return skeleton.time - attachmentTime;
 	}
 
-	public void setAttachmentVertices (float[] attachmentVertices) {
+	public void setAttachmentVertices(float[] attachmentVertices) {
 		this.attachmentVertices = attachmentVertices;
 	}
 
-	public float[] getAttachmentVertices () {
+	public float[] getAttachmentVertices() {
 		return attachmentVertices;
 	}
 
@@ -157,7 +169,7 @@ public class Slot {
 		return attachmentVerticesCount;
 	}
 
-	void setToSetupPose (int slotIndex) {
+	void setToSetupPose(int slotIndex) {
 		r = data.r;
 		g = data.g;
 		b = data.b;
@@ -165,11 +177,11 @@ public class Slot {
 		setAttachment(data.attachmentName == null ? null : skeleton.getAttachment(slotIndex, data.attachmentName));
 	}
 
-	public void setToSetupPose () {
+	public void setToSetupPose() {
 		setToSetupPose(skeleton.data.slots.indexOf(data));
 	}
 
-	public String toString () {
+	public String toString() {
 		return data.name;
 	}
 }

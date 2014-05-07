@@ -46,7 +46,7 @@ public class RegionAttachment extends Attachment {
 	float x, y, rotation, scaleX = 1, scaleY = 1, width, height;
 	float regionOffsetX, regionOffsetY, regionWidth, regionHeight, regionOriginalWidth, regionOriginalHeight;
 	final float[] offset = new float[8], uvs = new float[8];
-	float r = 1, g = 1, b = 1, a = 1;
+	float r = 1f, g = 1f, b = 1f, a = 1f;
 
 	String path;
 	Object rendererObject;
