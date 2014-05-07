@@ -30,6 +30,9 @@
 
 package com.esotericsoftware.spine.attachments;
 
+import playn.core.ImageLayer;
+import playn.core.PlayN;
+
 import com.esotericsoftware.spine.Atlas;
 import com.esotericsoftware.spine.Atlas.AtlasRegion;
 import com.esotericsoftware.spine.Skin;
@@ -45,9 +48,9 @@ public class AtlasAttachmentLoader implements AttachmentLoader {
 
 	public RegionAttachment newRegionAttachment(Skin skin, String name, String path) {
 		AtlasRegion region = atlas.findRegion(path);
-		if (region == null) throw new RuntimeException("Region not found in atlas: " + path + " (region attachment: " + name + ")");
+		if (region == null)
+			throw new RuntimeException("Region not found in atlas: " + path + " (region attachment: " + name + ")");
 		RegionAttachment attachment = new RegionAttachment(name);
-		attachment.setRendererObject(region);
 		attachment.setUVs(region.u, region.v, region.u2, region.v2, region.rotate);
 		attachment.regionOffsetX = region.offsetX;
 		attachment.regionOffsetY = region.offsetY;
@@ -55,12 +58,18 @@ public class AtlasAttachmentLoader implements AttachmentLoader {
 		attachment.regionHeight = region.height;
 		attachment.regionOriginalWidth = region.originalWidth;
 		attachment.regionOriginalHeight = region.originalHeight;
+
+		ImageLayer originalLayer = (ImageLayer) region.page.rendererObject;
+		attachment.setRendererObject(PlayN.graphics().createImageLayer(
+				originalLayer.image().subImage(region.x, region.y, region.width, region.height)));
+
 		return attachment;
 	}
 
 	public MeshAttachment newMeshAttachment(Skin skin, String name, String path) {
 		AtlasRegion region = atlas.findRegion(path);
-		if (region == null) throw new RuntimeException("Region not found in atlas: " + path + " (mesh attachment: " + name + ")");
+		if (region == null)
+			throw new RuntimeException("Region not found in atlas: " + path + " (mesh attachment: " + name + ")");
 		MeshAttachment attachment = new MeshAttachment(name);
 		attachment.setRendererObject(region);
 		attachment.setRegionU(region.u);
@@ -79,7 +88,8 @@ public class AtlasAttachmentLoader implements AttachmentLoader {
 
 	public SkinnedMeshAttachment newSkinnedMeshAttachment(Skin skin, String name, String path) {
 		AtlasRegion region = atlas.findRegion(path);
-		if (region == null) throw new RuntimeException("Region not found in atlas: " + path + " (skinned mesh attachment: " + name + ")");
+		if (region == null)
+			throw new RuntimeException("Region not found in atlas: " + path + " (skinned mesh attachment: " + name + ")");
 		SkinnedMeshAttachment attachment = new SkinnedMeshAttachment(name);
 		attachment.setRendererObject(region);
 		attachment.setRegionU(region.u);

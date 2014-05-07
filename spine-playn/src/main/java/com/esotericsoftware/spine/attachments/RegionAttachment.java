@@ -30,6 +30,9 @@
 
 package com.esotericsoftware.spine.attachments;
 
+import playn.core.Image;
+import playn.core.ImageLayer;
+
 import com.esotericsoftware.spine.Bone;
 
 /** Attachment that displays a texture region. */
@@ -49,7 +52,31 @@ public class RegionAttachment extends Attachment {
 	float r = 1f, g = 1f, b = 1f, a = 1f;
 
 	String path;
-	Object rendererObject;
+	ImageLayer rendererObject;
+
+	ImageLayer layer;
+	// {
+	// layer.setHeight(height);
+	// layer.setOrigin(X1, Y1)
+	// layer.setRotation(angle)
+	// layer.setScale(scale)
+	// layer.setShader(shader)
+	// layer.setSize(width, height);
+	// layer.setTint(tint)
+	// layer.setTranslation(X1, Y1)
+	// layer.setWidth(regionOriginalWidth);
+	// layer.transform()
+	// }
+
+	Image.Region image;
+
+	// {
+	// image.setBounds(X1, Y1, width, height);
+	// image.setMipmapped(mipmapped);
+	// image.setRepeat(repeatX, repeatY);
+	// image.subImage(X1, Y1, regionOriginalWidth, height)
+	// image.transform(xform)
+	// }
 
 	public RegionAttachment(String name) {
 		super(name);
@@ -224,11 +251,11 @@ public class RegionAttachment extends Attachment {
 		this.path = path;
 	}
 
-	public Object getRendererObject() {
+	public ImageLayer getRendererObject() {
 		return rendererObject;
 	}
 
-	public void setRendererObject(Object rendererObject) {
+	public void setRendererObject(ImageLayer rendererObject) {
 		this.rendererObject = rendererObject;
 	}
 

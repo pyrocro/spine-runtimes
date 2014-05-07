@@ -37,7 +37,6 @@ import playn.core.InternalTransform;
 import playn.core.PlayN;
 import playn.core.util.Callback;
 
-import com.esotericsoftware.spine.Atlas.AtlasRegion;
 import com.esotericsoftware.spine.attachments.RegionAttachment;
 
 public class SimpleTest1 extends ATest {
@@ -120,7 +119,7 @@ public class SimpleTest1 extends ATest {
 			for (Slot slot : drawOrder) {
 				if (slot.getAttachment() != null && slot.getAttachment() instanceof RegionAttachment) {
 					RegionAttachment attachment = (RegionAttachment) slot.getAttachment();
-					ImageLayer layer = (ImageLayer) ((AtlasRegion) attachment.getRendererObject()).page.rendererObject;
+					ImageLayer layer = attachment.getRendererObject();
 
 					float[] vertices = new float[8];
 					attachment.computeWorldVertices(skeleton.x, skeleton.y, slot.getBone(), vertices);
