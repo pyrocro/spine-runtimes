@@ -32,9 +32,7 @@ package com.esotericsoftware.spine;
 
 import java.io.ByteArrayInputStream;
 
-import playn.core.GroupLayer;
 import playn.core.Image;
-import playn.core.ImageLayer;
 import playn.core.Json;
 import playn.core.PlayN;
 import playn.core.util.Callback;
@@ -58,13 +56,11 @@ public class SpineLoader {
 	 * 
 	 * @param path
 	 *            Path (inside the PlayN assets folder) where the Atlas file is located, ex: "spineboy/spineboy.atlas"
-	 * @param parentLayer
-	 *            Parent layer for layers associated to this
 	 * @param callback
 	 *            Callback when the Atlas has finished loading (or crashed...)
 	 */
-	public static final void getAtlas(final String path, final GroupLayer parentLayer, final Callback<Atlas> callback) {
-		new Atlas(path, new SpineTextureLoader(parentLayer), callback);
+	public static final void getAtlas(final String path, final Callback<Atlas> callback) {
+		new Atlas(path, new SpineTextureLoader(), callback);
 	}
 
 	/**
@@ -79,7 +75,7 @@ public class SpineLoader {
 	 *            Callback when the skeleton has finished loading (or crashed...)
 	 */
 	public static final void getSkeleton(final String path, final Atlas atlas, final Callback<Skeleton> callback) {
-		getSkeleton(path, 1f, atlas, callback);
+		SpineLoader.getSkeleton(path, 1f, atlas, callback);
 	}
 
 	/**
@@ -101,12 +97,12 @@ public class SpineLoader {
 
 			// Loading the skeleton Data using the correct method.
 			if ("json".equalsIgnoreCase(extension)) {
-				getSkeletonUsingJson(path, scale, atlas, callback);
+				SpineLoader.getSkeletonUsingJson(path, scale, atlas, callback);
 			} else {
-				getSkeletonUsingBinary(path, scale, atlas, callback);
+				SpineLoader.getSkeletonUsingBinary(path, scale, atlas, callback);
 			}
 
-		} catch (Throwable cause) {
+		} catch (final Throwable cause) {
 			callback.onFailure(cause);
 		}
 	}
@@ -117,13 +113,13 @@ public class SpineLoader {
 		PlayN.assets().getBytes(path, new Callback<byte[]>() {
 
 			@Override
-			public void onFailure(Throwable cause) {
+			public void onFailure(final Throwable cause) {
 				PlayN.log().error("Error while loading Spine BINARY skeleton file " + path, cause);
 				callback.onFailure(cause);
 			}
 
 			@Override
-			public void onSuccess(byte[] result) {
+			public void onSuccess(final byte[] result) {
 
 				// Load the Skeleton data using binary.
 				final SkeletonBinary binary = new SkeletonBinary(new AtlasAttachmentLoader(atlas));
@@ -142,16 +138,16 @@ public class SpineLoader {
 		PlayN.assets().getText(path, new Callback<String>() {
 
 			@Override
-			public void onFailure(Throwable cause) {
+			public void onFailure(final Throwable cause) {
 				PlayN.log().error("Error while loading Spine JSON skeleton file " + path, cause);
 				callback.onFailure(cause);
 			}
 
 			@Override
-			public void onSuccess(String result) {
+			public void onSuccess(final String result) {
 
 				// Parse the String result to obtain a PlayN JSON object.
-				Json.Object jsonResult = PlayN.json().parse(result);
+				final Json.Object jsonResult = PlayN.json().parse(result);
 
 				// Load the Skeleton data using JSON.
 				final SkeletonJson json = new SkeletonJson(new AtlasAttachmentLoader(atlas));
@@ -171,33 +167,26 @@ public class SpineLoader {
 	 */
 	private static class SpineTextureLoader implements TextureLoader {
 
-		// Internal hidden Grouplayer for managing ImageLayers.
-		GroupLayer groupLayer;
-
-		public SpineTextureLoader(GroupLayer parent) {
-			groupLayer = PlayN.graphics().createGroupLayer();
-			groupLayer.setVisible(false);
-			parent.add(groupLayer);
+		@Override
+		public void unload(final Object texture) {
+			// Usually not necessary but who knows...
+			((Image) texture).clearTexture();
 		}
 
-		public void unload(Object texture) {
-			((ImageLayer) texture).destroy();
-		}
-
+		@Override
 		public void load(final AtlasPage page, final String path, final Callback<Void> callback) {
-			Image image = PlayN.assets().getImage(path);
+			final Image image = PlayN.assets().getImage(path);
 			image.addCallback(new Callback<Image>() {
 				@Override
-				public void onFailure(Throwable cause) {
+				public void onFailure(final Throwable cause) {
 					callback.onFailure(cause);
 				}
 
 				@Override
-				public void onSuccess(Image result) {
-					page.rendererObject = PlayN.graphics().createImageLayer(result);
+				public void onSuccess(final Image result) {
+					page.rendererObject = result;
 					page.width = (int) result.width();
 					page.height = (int) result.height();
-					PlayN.log().info("Successfully loaded image " + path + " ; size = " + result.width() + " x " + result.height());
 					callback.onSuccess(null);
 				}
 			});

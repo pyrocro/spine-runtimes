@@ -32,183 +32,216 @@ package com.esotericsoftware.spine.attachments;
 
 import playn.core.Image;
 import playn.core.ImageLayer;
+import playn.core.PlayN;
+import pythagoras.f.FloatMath;
 
-import com.esotericsoftware.spine.Bone;
+import com.esotericsoftware.spine.Atlas.AtlasRegion;
 
 /** Attachment that displays a texture region. */
 public class RegionAttachment extends Attachment {
-	public static final int X1 = 0;
-	public static final int Y1 = 1;
-	public static final int X2 = 2;
-	public static final int Y2 = 3;
-	public static final int X3 = 4;
-	public static final int Y3 = 5;
-	public static final int X4 = 6;
-	public static final int Y4 = 7;
 
-	float x, y, rotation, scaleX = 1, scaleY = 1, width, height;
+	private AtlasRegion region;
+
 	float regionOffsetX, regionOffsetY, regionWidth, regionHeight, regionOriginalWidth, regionOriginalHeight;
 	final float[] offset = new float[8], uvs = new float[8];
 	float r = 1f, g = 1f, b = 1f, a = 1f;
 
 	String path;
-	ImageLayer rendererObject;
-
-	ImageLayer layer;
-	// {
-	// layer.setHeight(height);
-	// layer.setOrigin(X1, Y1)
-	// layer.setRotation(angle)
-	// layer.setScale(scale)
-	// layer.setShader(shader)
-	// layer.setSize(width, height);
-	// layer.setTint(tint)
-	// layer.setTranslation(X1, Y1)
-	// layer.setWidth(regionOriginalWidth);
-	// layer.transform()
-	// }
-
-	Image.Region image;
-
-	// {
-	// image.setBounds(X1, Y1, width, height);
-	// image.setMipmapped(mipmapped);
-	// image.setRepeat(repeatX, repeatY);
-	// image.subImage(X1, Y1, regionOriginalWidth, height)
-	// image.transform(xform)
-	// }
+	private ImageLayer rendererObject;
+	private boolean rotate;
 
 	public RegionAttachment(String name) {
 		super(name);
 	}
 
-	public void setUVs(float u, float v, float u2, float v2, boolean rotate) {
-		float[] uvs = this.uvs;
-		if (rotate) {
-			uvs[X2] = u;
-			uvs[Y2] = v2;
-			uvs[X3] = u;
-			uvs[Y3] = v;
-			uvs[X4] = u2;
-			uvs[Y4] = v;
-			uvs[X1] = u2;
-			uvs[Y1] = v2;
+	public void setRegion(AtlasRegion region) {
+		this.regionOffsetX = region.offsetX;
+		this.regionOffsetY = region.offsetY;
+		this.regionWidth = region.width;
+		this.regionHeight = region.height;
+		this.regionOriginalWidth = region.originalWidth;
+		this.regionOriginalHeight = region.originalHeight;
+
+		Image texture = (Image) region.page.rendererObject;
+		if (this.rendererObject == null) {
+			this.rendererObject = PlayN.graphics().createImageLayer(texture.subImage(0f, 0f, 0f, 0f));
 		} else {
-			uvs[X1] = u;
-			uvs[Y1] = v2;
-			uvs[X2] = u;
-			uvs[Y2] = v;
-			uvs[X3] = u2;
-			uvs[Y3] = v;
-			uvs[X4] = u2;
-			uvs[Y4] = v2;
+			this.rendererObject.setImage(texture.subImage(0f, 0f, 0f, 0f));
 		}
+
+		this.setUVs(region.u, region.v, region.u2, region.v2, region.rotate);
 	}
 
-	public void updateOffset() {
-		float width = this.width;
-		float height = this.height;
-		float scaleX = this.scaleX;
-		float scaleY = this.scaleY;
-		float regionScaleX = width / regionOriginalWidth * scaleX;
-		float regionScaleY = height / regionOriginalHeight * scaleY;
-		float localX = -width / 2 * scaleX + regionOffsetX * regionScaleX;
-		float localY = -height / 2 * scaleY + regionOffsetY * regionScaleY;
-		float localX2 = localX + regionWidth * regionScaleX;
-		float localY2 = localY + regionHeight * regionScaleY;
-		float radians = rotation * (float) Math.PI / 180f;
-		float cos = (float) Math.cos(radians);
-		float sin = (float) Math.sin(radians);
-		float x = this.x;
-		float y = this.y;
-		float localXCos = localX * cos + x;
-		float localXSin = localX * sin;
-		float localYCos = localY * cos + y;
-		float localYSin = localY * sin;
-		float localX2Cos = localX2 * cos + x;
-		float localX2Sin = localX2 * sin;
-		float localY2Cos = localY2 * cos + y;
-		float localY2Sin = localY2 * sin;
-		float[] offset = this.offset;
-		offset[X1] = localXCos - localYSin;
-		offset[Y1] = localYCos + localXSin;
-		offset[X2] = localXCos - localY2Sin;
-		offset[Y2] = localY2Cos + localXSin;
-		offset[X3] = localX2Cos - localY2Sin;
-		offset[Y3] = localY2Cos + localX2Sin;
-		offset[X4] = localX2Cos - localYSin;
-		offset[Y4] = localYCos + localX2Sin;
+	public AtlasRegion getRegion() {
+		if (region == null)
+			throw new IllegalStateException("Region has not been set: " + this);
+		return region;
 	}
 
-	public void computeWorldVertices(float x, float y, Bone bone, float[] worldVertices) {
-		x += bone.getWorldX();
-		y += bone.getWorldY();
-		float m00 = bone.getM00(), m01 = bone.getM01(), m10 = bone.getM10(), m11 = bone.getM11();
-		float[] offset = this.offset;
-		worldVertices[X1] = offset[X1] * m00 + offset[Y1] * m01 + x;
-		worldVertices[Y1] = offset[X1] * m10 + offset[Y1] * m11 + y;
-		worldVertices[X2] = offset[X2] * m00 + offset[Y2] * m01 + x;
-		worldVertices[Y2] = offset[X2] * m10 + offset[Y2] * m11 + y;
-		worldVertices[X3] = offset[X3] * m00 + offset[Y3] * m01 + x;
-		worldVertices[Y3] = offset[X3] * m10 + offset[Y3] * m11 + y;
-		worldVertices[X4] = offset[X4] * m00 + offset[Y4] * m01 + x;
-		worldVertices[Y4] = offset[X4] * m10 + offset[Y4] * m11 + y;
+	public void setUVs(float u, float v, float u2, float v2, boolean rotate) {
+		this.rotate = rotate;
+		Image.Region imageRegion = (Image.Region) rendererObject.image();
+
+		float pageWidth = imageRegion.parent().width();
+		float pageHeight = imageRegion.parent().height();
+
+		float width = (u2 - u) * pageWidth;
+		float height = (v2 - v) * pageHeight;
+
+		float x = u * pageWidth;
+		float y = v * pageHeight;
+
+		imageRegion.setBounds( //
+				rotate ? x : x, //
+				rotate ? y + height : y + height, //
+				rotate ? width : width, //
+				rotate ? -height : -height //
+				);
+		rendererObject.setOrigin(Math.abs(imageRegion.width() / 2f), Math.abs(imageRegion.height() / 2f));
+
+		// FIXME
+		// float[] uvs = this.uvs;
+		// if (rotate) {
+		// uvs[X2] = u;
+		// uvs[Y2] = v2;
+		// uvs[X3] = u;
+		// uvs[Y3] = v;
+		// uvs[X4] = u2;
+		// uvs[Y4] = v;
+		// uvs[X1] = u2;
+		// uvs[Y1] = v2;
+		// } else {
+		// uvs[X1] = u;
+		// uvs[Y1] = v2;
+		// uvs[X2] = u;
+		// uvs[Y2] = v;
+		// uvs[X3] = u2;
+		// uvs[Y3] = v;
+		// uvs[X4] = u2;
+		// uvs[Y4] = v2;
+		// }
 	}
+
+	// public static final int X1 = 0;
+	// public static final int Y1 = 1;
+	// public static final int X2 = 2;
+	// public static final int Y2 = 3;
+	// public static final int X3 = 4;
+	// public static final int Y3 = 5;
+	// public static final int X4 = 6;
+	// public static final int Y4 = 7;
+	//
+	// public void updateOffset() {
+	// float width = rendererObject.width();
+	// float height = rendererObject.height();
+	// float scaleX = rendererObject.scaleX();
+	// float scaleY = rendererObject.scaleY();
+	// float regionScaleX = width / regionOriginalWidth * scaleX;
+	// float regionScaleY = height / regionOriginalHeight * scaleY;
+	// float localX = -width / 2 * scaleX + regionOffsetX * regionScaleX;
+	// float localY = -height / 2 * scaleY + regionOffsetY * regionScaleY;
+	// float localX2 = localX + regionWidth * regionScaleX;
+	// float localY2 = localY + regionHeight * regionScaleY;
+	// float radians = rendererObject.rotation();
+	// float cos = (float) Math.cos(radians);
+	// float sin = (float) Math.sin(radians);
+	// float x = rendererObject.tx();
+	// float y = rendererObject.ty();
+	// float localXCos = localX * cos + x;
+	// float localXSin = localX * sin;
+	// float localYCos = localY * cos + y;
+	// float localYSin = localY * sin;
+	// float localX2Cos = localX2 * cos + x;
+	// float localX2Sin = localX2 * sin;
+	// float localY2Cos = localY2 * cos + y;
+	// float localY2Sin = localY2 * sin;
+	// float[] offset = this.offset;
+	// offset[X1] = localXCos - localYSin;
+	// offset[Y1] = localYCos + localXSin;
+	// offset[X2] = localXCos - localY2Sin;
+	// offset[Y2] = localY2Cos + localXSin;
+	// offset[X3] = localX2Cos - localY2Sin;
+	// offset[Y3] = localY2Cos + localX2Sin;
+	// offset[X4] = localX2Cos - localYSin;
+	// offset[Y4] = localYCos + localX2Sin;
+	// }
+
+	// FIXME
+	// public void computeWorldVertices(float x, float y, Bone bone, float[] worldVertices) {
+	// x += bone.getWorldX();
+	// y += bone.getWorldY();
+	// float m00 = bone.getM00(), m01 = bone.getM01(), m10 = bone.getM10(), m11 = bone.getM11();
+	// float[] offset = this.offset;
+	// worldVertices[X1] = offset[X1] * m00 + offset[Y1] * m01 + x;
+	// worldVertices[Y1] = offset[X1] * m10 + offset[Y1] * m11 + y;
+	// worldVertices[X2] = offset[X2] * m00 + offset[Y2] * m01 + x;
+	// worldVertices[Y2] = offset[X2] * m10 + offset[Y2] * m11 + y;
+	// worldVertices[X3] = offset[X3] * m00 + offset[Y3] * m01 + x;
+	// worldVertices[Y3] = offset[X3] * m10 + offset[Y3] * m11 + y;
+	// worldVertices[X4] = offset[X4] * m00 + offset[Y4] * m01 + x;
+	// worldVertices[Y4] = offset[X4] * m10 + offset[Y4] * m11 + y;
+	// }
 
 	public float getX() {
-		return x;
+		return rendererObject.tx();
 	}
 
 	public void setX(float x) {
-		this.x = x;
+		rendererObject.setTx(x);
 	}
 
 	public float getY() {
-		return y;
+		return rendererObject.ty();
 	}
 
 	public void setY(float y) {
-		this.y = y;
+		rendererObject.setTy(y);
 	}
 
 	public float getRotation() {
-		return rotation;
+		return FloatMath.toDegrees(rendererObject.rotation());
 	}
 
-	public void setRotation(float rotation) {
-		this.rotation = rotation;
+	public void setRotation(float degrees) {
+		rendererObject.setRotation(FloatMath.toRadians(degrees + (rotate ? -90f : 0f)));
 	}
 
 	public float getScaleX() {
-		return scaleX;
+		return rendererObject.scaleX();
 	}
 
 	public void setScaleX(float scaleX) {
-		this.scaleX = scaleX;
+		rendererObject.setScaleX(scaleX);
 	}
 
 	public float getScaleY() {
-		return scaleY;
+		return rendererObject.scaleY();
 	}
 
 	public void setScaleY(float scaleY) {
-		this.scaleY = scaleY;
+		rendererObject.setScaleY(scaleY);
 	}
 
 	public float getWidth() {
-		return width;
+		return rendererObject.width();
 	}
 
 	public void setWidth(float width) {
-		this.width = width;
+		if (rotate)
+			rendererObject.setHeight(width);
+		else
+			rendererObject.setWidth(width);
 	}
 
 	public float getHeight() {
-		return height;
+		return rendererObject.height();
 	}
 
 	public void setHeight(float height) {
-		this.height = height;
+		if (rotate)
+			rendererObject.setWidth(height);
+		else
+			rendererObject.setHeight(height);
 	}
 
 	public float getR() {

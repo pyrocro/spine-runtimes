@@ -32,27 +32,36 @@ package com.esotericsoftware.spine;
 
 import java.util.ArrayList;
 
+import playn.core.GroupLayer;
+import playn.core.PlayN;
+
 import com.esotericsoftware.spine.attachments.Attachment;
 
 public class Skeleton {
+
 	final SkeletonData data;
 	final ArrayList<Bone> bones;
 	final ArrayList<Slot> slots;
 	ArrayList<Slot> drawOrder;
 	Skin skin;
-	float r, g, b, a;
 	float time;
-	boolean flipX, flipY;
-	float x, y;
+	float r = 1f, g = 1f, b = 1f, a = 1f;
 
-	public Skeleton (SkeletonData data) {
-		if (data == null) throw new IllegalArgumentException("data cannot be null.");
+	private GroupLayer playncoordinates;
+	private GroupLayer spinecoordinates;
+	GroupLayer root;
+
+	public Skeleton(SkeletonData data) {
+		if (data == null)
+			throw new IllegalArgumentException("data cannot be null.");
 		this.data = data;
+		createLayers();
 
 		bones = new ArrayList<Bone>(data.bones.size());
 		for (BoneData boneData : data.bones) {
 			Bone parent = boneData.parent == null ? null : bones.get(data.bones.indexOf(boneData.parent));
-			bones.add(new Bone(boneData, parent));
+			Bone bone = new Bone(boneData, parent);
+			bones.add(bone);
 		}
 
 		slots = new ArrayList<Slot>(data.slots.size());
@@ -63,22 +72,21 @@ public class Skeleton {
 			slots.add(slot);
 			drawOrder.add(slot);
 		}
-
-		r = 1f;
-		g = 1f;
-		b = 1f;
-		a = 1;
+		Utils.updateDrawOrder(this);
 	}
 
 	/** Copy constructor. */
-	public Skeleton (Skeleton skeleton) {
-		if (skeleton == null) throw new IllegalArgumentException("skeleton cannot be null.");
+	public Skeleton(Skeleton skeleton) {
+		if (skeleton == null)
+			throw new IllegalArgumentException("skeleton cannot be null.");
 		data = skeleton.data;
+		createLayers();
 
 		bones = new ArrayList<Bone>(skeleton.bones.size());
 		for (Bone bone : skeleton.bones) {
 			Bone parent = bone.parent == null ? null : bones.get(skeleton.bones.indexOf(bone.parent));
-			bones.add(new Bone(bone, parent));
+			Bone nbone = new Bone(bone, parent);
+			bones.add(nbone);
 		}
 
 		slots = new ArrayList<Slot>(skeleton.slots.size());
@@ -91,137 +99,159 @@ public class Skeleton {
 		drawOrder = new ArrayList<Slot>(slots.size());
 		for (Slot slot : skeleton.drawOrder)
 			drawOrder.add(slots.get(skeleton.slots.indexOf(slot)));
+		Utils.updateDrawOrder(this);
 
 		skin = skeleton.skin;
-		r = skeleton.r;
-		g = skeleton.g;
-		b = skeleton.b;
-		a = skeleton.a;
 		time = skeleton.time;
 	}
 
-	/** Updates the world transform for each bone. */
-	public void updateWorldTransform () {
-		boolean flipX = this.flipX;
-		boolean flipY = this.flipY;
-		ArrayList<Bone> bones = this.bones;
-		int bsize = bones.size();
-		for (int i = 0, n = bsize; i < n; i++)
-			bones.get(i).updateWorldTransform(flipX, flipY);
+	private void createLayers() {
+
+		// A Layer using PlayN coordinates for managing the skeleton.
+		playncoordinates = PlayN.graphics().createGroupLayer();
+
+		// A specific Layer for transforming PlayN coordinates into Spine coordinates
+		spinecoordinates = PlayN.graphics().createGroupLayer();
+		// spinecoordinates.setTranslation(0f, PlayN.graphics().height());
+		spinecoordinates.setScaleY(-1f);
+		playncoordinates.add(spinecoordinates);
+
+		// Parent layer of the skeleton.
+		root = PlayN.graphics().createGroupLayer();
+		spinecoordinates.add(root);
 	}
 
 	/** Sets the bones and slots to their setup pose values. */
-	public void setToSetupPose () {
+	public void setToSetupPose() {
 		setBonesToSetupPose();
 		setSlotsToSetupPose();
 	}
 
-	public void setBonesToSetupPose () {
+	public void setBonesToSetupPose() {
 		ArrayList<Bone> bones = this.bones;
 		int bsize = bones.size();
 		for (int i = 0, n = bsize; i < n; i++)
 			bones.get(i).setToSetupPose();
 	}
 
-	public void setSlotsToSetupPose () {
+	public void setSlotsToSetupPose() {
 		ArrayList<Slot> slots = this.slots;
 		int ssize = slots.size();
 		for (int i = 0; i < ssize; i++)
 			drawOrder.set(i, slots.get(i));
 		for (int i = 0, n = ssize; i < n; i++)
 			slots.get(i).setToSetupPose(i);
+		Utils.updateDrawOrder(this);
 	}
 
-	public SkeletonData getData () {
+	public SkeletonData getData() {
 		return data;
 	}
 
-	public ArrayList<Bone> getBones () {
+	public ArrayList<Bone> getBones() {
 		return bones;
 	}
 
 	/** @return May return null. */
-	public Bone getRootBone () {
-		if (bones.size() == 0) return null;
+	public Bone getRootBone() {
+		if (bones.size() == 0)
+			return null;
 		return bones.get(0);
 	}
 
 	/** @return May be null. */
-	public Bone findBone (String boneName) {
-		if (boneName == null) throw new IllegalArgumentException("boneName cannot be null.");
+	public Bone findBone(String boneName) {
+		if (boneName == null)
+			throw new IllegalArgumentException("boneName cannot be null.");
 		ArrayList<Bone> bones = this.bones;
 		int bsize = bones.size();
 		for (int i = 0, n = bsize; i < n; i++) {
 			Bone bone = bones.get(i);
-			if (bone.data.name.equals(boneName)) return bone;
+			if (bone.data.name.equals(boneName))
+				return bone;
 		}
 		return null;
 	}
 
 	/** @return -1 if the bone was not found. */
-	public int findBoneIndex (String boneName) {
-		if (boneName == null) throw new IllegalArgumentException("boneName cannot be null.");
+	public int findBoneIndex(String boneName) {
+		if (boneName == null)
+			throw new IllegalArgumentException("boneName cannot be null.");
 		ArrayList<Bone> bones = this.bones;
 		int bsize = bones.size();
 		for (int i = 0, n = bsize; i < n; i++)
-			if (bones.get(i).data.name.equals(boneName)) return i;
+			if (bones.get(i).data.name.equals(boneName))
+				return i;
 		return -1;
 	}
 
-	public ArrayList<Slot> getSlots () {
+	public ArrayList<Slot> getSlots() {
 		return slots;
 	}
 
 	/** @return May be null. */
-	public Slot findSlot (String slotName) {
-		if (slotName == null) throw new IllegalArgumentException("slotName cannot be null.");
+	public Slot findSlot(String slotName) {
+		if (slotName == null)
+			throw new IllegalArgumentException("slotName cannot be null.");
 		ArrayList<Slot> slots = this.slots;
 		int ssize = slots.size();
 		for (int i = 0, n = ssize; i < n; i++) {
 			Slot slot = slots.get(i);
-			if (slot.data.name.equals(slotName)) return slot;
+			if (slot.data.name.equals(slotName))
+				return slot;
 		}
 		return null;
 	}
 
 	/** @return -1 if the bone was not found. */
-	public int findSlotIndex (String slotName) {
-		if (slotName == null) throw new IllegalArgumentException("slotName cannot be null.");
+	public int findSlotIndex(String slotName) {
+		if (slotName == null)
+			throw new IllegalArgumentException("slotName cannot be null.");
 		ArrayList<Slot> slots = this.slots;
 		int ssize = slots.size();
 		for (int i = 0, n = ssize; i < n; i++)
-			if (slots.get(i).data.name.equals(slotName)) return i;
+			if (slots.get(i).data.name.equals(slotName))
+				return i;
 		return -1;
 	}
 
 	/** Returns the slots in the order they will be drawn. The returned array may be modified to change the draw order. */
-	public ArrayList<Slot> getDrawOrder () {
+	public ArrayList<Slot> getDrawOrder() {
 		return drawOrder;
 	}
 
 	/** Sets the slots and the order they will be drawn. */
-	public void setDrawOrder (ArrayList<Slot> drawOrder) {
+	public void setDrawOrder(ArrayList<Slot> drawOrder) {
 		this.drawOrder = drawOrder;
+		Utils.updateDrawOrder(this);
 	}
 
 	/** @return May be null. */
-	public Skin getSkin () {
+	public Skin getSkin() {
 		return skin;
 	}
 
-	/** Sets a skin by name.
-	 * @see #setSkin(Skin) */
-	public void setSkin (String skinName) {
+	/**
+	 * Sets a skin by name.
+	 * 
+	 * @see #setSkin(Skin)
+	 */
+	public void setSkin(String skinName) {
 		Skin skin = data.findSkin(skinName);
-		if (skin == null) throw new IllegalArgumentException("Skin not found: " + skinName);
+		if (skin == null)
+			throw new IllegalArgumentException("Skin not found: " + skinName);
 		setSkin(skin);
 	}
 
-	/** Sets the skin used to look up attachments not found in the {@link SkeletonData#getDefaultSkin() default skin}. Attachments
-	 * from the new skin are attached if the corresponding attachment from the old skin was attached. If there was no old skin,
-	 * each slot's setup mode attachment is attached from the new skin.
-	 * @param newSkin May be null. */
-	public void setSkin (Skin newSkin) {
+	/**
+	 * Sets the skin used to look up attachments not found in the {@link SkeletonData#getDefaultSkin() default skin}. Attachments from the new skin
+	 * are attached if the corresponding attachment from the old skin was attached. If there was no old skin, each slot's setup mode attachment is
+	 * attached from the new skin.
+	 * 
+	 * @param newSkin
+	 *            May be null.
+	 */
+	public void setSkin(Skin newSkin) {
 		if (skin == null) {
 			ArrayList<Slot> slots = this.slots;
 			int ssize = slots.size();
@@ -230,7 +260,8 @@ public class Skeleton {
 				String name = slot.data.attachmentName;
 				if (name != null) {
 					Attachment attachment = newSkin.getAttachment(i, name);
-					if (attachment != null) slot.setAttachment(attachment);
+					if (attachment != null)
+						slot.setAttachment(attachment);
 				}
 			}
 		} else if (newSkin != null) //
@@ -239,24 +270,31 @@ public class Skeleton {
 	}
 
 	/** @return May be null. */
-	public Attachment getAttachment (String slotName, String attachmentName) {
+	public Attachment getAttachment(String slotName, String attachmentName) {
 		return getAttachment(data.findSlotIndex(slotName), attachmentName);
 	}
 
 	/** @return May be null. */
-	public Attachment getAttachment (int slotIndex, String attachmentName) {
-		if (attachmentName == null) throw new IllegalArgumentException("attachmentName cannot be null.");
+	public Attachment getAttachment(int slotIndex, String attachmentName) {
+		if (attachmentName == null)
+			throw new IllegalArgumentException("attachmentName cannot be null.");
 		if (skin != null) {
 			Attachment attachment = skin.getAttachment(slotIndex, attachmentName);
-			if (attachment != null) return attachment;
+			if (attachment != null)
+				return attachment;
 		}
-		if (data.defaultSkin != null) return data.defaultSkin.getAttachment(slotIndex, attachmentName);
+		if (data.defaultSkin != null)
+			return data.defaultSkin.getAttachment(slotIndex, attachmentName);
 		return null;
 	}
 
-	/** @param attachmentName May be null. */
-	public void setAttachment (String slotName, String attachmentName) {
-		if (slotName == null) throw new IllegalArgumentException("slotName cannot be null.");
+	/**
+	 * @param attachmentName
+	 *            May be null.
+	 */
+	public void setAttachment(String slotName, String attachmentName) {
+		if (slotName == null)
+			throw new IllegalArgumentException("slotName cannot be null.");
 		ArrayList<Slot> slots = this.slots;
 		int ssize = slots.size();
 		for (int i = 0, n = ssize; i < n; i++) {
@@ -307,51 +345,56 @@ public class Skeleton {
 		this.a = a;
 	}
 
-	public boolean getFlipX () {
-		return flipX;
+	public boolean getFlipX() {
+		return playncoordinates.scaleX() == -1f;
 	}
 
-	public void setFlipX (boolean flipX) {
-		this.flipX = flipX;
+	public void setFlipX(boolean flipX) {
+		this.playncoordinates.setScaleX(flipX ? -1f : 1f);
 	}
 
-	public boolean getFlipY () {
-		return flipY;
+	public boolean getFlipY() {
+		return playncoordinates.scaleY() == -1f;
 	}
 
-	public void setFlipY (boolean flipY) {
-		this.flipY = flipY;
+	public void setFlipY(boolean flipY) {
+		this.playncoordinates.setScaleY(flipY ? -1f : 1f);
 	}
 
-	public float getX () {
-		return x;
+	public float getX() {
+		return playncoordinates.tx();
 	}
 
-	public void setX (float x) {
-		this.x = x;
+	public void setX(float x) {
+		this.playncoordinates.setTx(x);
 	}
 
-	public float getY () {
-		return y;
+	public float getY() {
+		return playncoordinates.ty();
 	}
 
-	public void setY (float y) {
-		this.y = y;
+	public void setY(float y) {
+		playncoordinates.setTy(y);
 	}
 
-	public float getTime () {
+	public float getTime() {
 		return time;
 	}
 
-	public void setTime (float time) {
+	public void setTime(float time) {
 		this.time = time;
 	}
 
-	public void update (float delta) {
+	public GroupLayer rootLayer() {
+		return playncoordinates;
+	}
+
+	public void update(float delta) {
 		time += delta;
 	}
 
-	public String toString () {
+	public String toString() {
 		return data.name != null ? data.name : super.toString();
 	}
+
 }

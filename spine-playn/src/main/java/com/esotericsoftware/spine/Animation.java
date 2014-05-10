@@ -39,32 +39,40 @@ public class Animation {
 	private final ArrayList<Timeline> timelines;
 	private float duration;
 
-	public Animation (String name, ArrayList<Timeline> timelines, float duration) {
-		if (name == null) throw new IllegalArgumentException("name cannot be null.");
-		if (timelines == null) throw new IllegalArgumentException("timelines cannot be null.");
+	public Animation(String name, ArrayList<Timeline> timelines, float duration) {
+		if (name == null)
+			throw new IllegalArgumentException("name cannot be null.");
+		if (timelines == null)
+			throw new IllegalArgumentException("timelines cannot be null.");
 		this.name = name;
 		this.timelines = timelines;
 		this.duration = duration;
 	}
 
-	public ArrayList<Timeline> getTimelines () {
+	public ArrayList<Timeline> getTimelines() {
 		return timelines;
 	}
 
 	/** Returns the duration of the animation in seconds. */
-	public float getDuration () {
+	public float getDuration() {
 		return duration;
 	}
 
-	public void setDuration (float duration) {
+	public void setDuration(float duration) {
 		this.duration = duration;
 	}
 
-	/** Poses the skeleton at the specified time for this animation.
-	 * @param lastTime The last time the animation was applied.
-	 * @param events Any triggered events are added. */
-	public void apply (Skeleton skeleton, float lastTime, float time, boolean loop, ArrayList<Event> events) {
-		if (skeleton == null) throw new IllegalArgumentException("skeleton cannot be null.");
+	/**
+	 * Poses the skeleton at the specified time for this animation.
+	 * 
+	 * @param lastTime
+	 *            The last time the animation was applied.
+	 * @param events
+	 *            Any triggered events are added.
+	 */
+	public void apply(Skeleton skeleton, float lastTime, float time, boolean loop, ArrayList<Event> events) {
+		if (skeleton == null)
+			throw new IllegalArgumentException("skeleton cannot be null.");
 
 		if (loop && duration != 0) {
 			time %= duration;
@@ -77,12 +85,19 @@ public class Animation {
 			timelines.get(i).apply(skeleton, lastTime, time, events, 1);
 	}
 
-	/** Poses the skeleton at the specified time for this animation mixed with the current pose.
-	 * @param lastTime The last time the animation was applied.
-	 * @param events Any triggered events are added.
-	 * @param alpha The amount of this animation that affects the current pose. */
-	public void mix (Skeleton skeleton, float lastTime, float time, boolean loop, ArrayList<Event> events, float alpha) {
-		if (skeleton == null) throw new IllegalArgumentException("skeleton cannot be null.");
+	/**
+	 * Poses the skeleton at the specified time for this animation mixed with the current pose.
+	 * 
+	 * @param lastTime
+	 *            The last time the animation was applied.
+	 * @param events
+	 *            Any triggered events are added.
+	 * @param alpha
+	 *            The amount of this animation that affects the current pose.
+	 */
+	public void mix(Skeleton skeleton, float lastTime, float time, boolean loop, ArrayList<Event> events, float alpha) {
+		if (skeleton == null)
+			throw new IllegalArgumentException("skeleton cannot be null.");
 
 		if (loop && duration != 0) {
 			lastTime %= duration;
@@ -95,40 +110,46 @@ public class Animation {
 			timelines.get(i).apply(skeleton, lastTime, time, events, alpha);
 	}
 
-	public String getName () {
+	public String getName() {
 		return name;
 	}
 
-	public String toString () {
+	public String toString() {
 		return name;
 	}
 
-	/** @param target After the first and before the last value.
-	 * @return index of first value greater than the target. */
-	static int binarySearch (float[] values, float target, int step) {
+	/**
+	 * @param target
+	 *            After the first and before the last value.
+	 * @return index of first value greater than the target.
+	 */
+	static int binarySearch(float[] values, float target, int step) {
 		int low = 0;
 		int high = values.length / step - 2;
-		if (high == 0) return step;
+		if (high == 0)
+			return step;
 		int current = high >>> 1;
 		while (true) {
 			if (values[(current + 1) * step] <= target)
 				low = current + 1;
 			else
 				high = current;
-			if (low == high) return (low + 1) * step;
+			if (low == high)
+				return (low + 1) * step;
 			current = (low + high) >>> 1;
 		}
 	}
 
-	static int linearSearch (float[] values, float target, int step) {
+	static int linearSearch(float[] values, float target, int step) {
 		for (int i = 0, last = values.length - step; i <= last; i += step)
-			if (values[i] > target) return i;
+			if (values[i] > target)
+				return i;
 		return -1;
 	}
 
 	static public interface Timeline {
 		/** Sets the value(s) for the specified time. */
-		public void apply (Skeleton skeleton, float lastTime, float time, ArrayList<Event> events, float alpha);
+		public void apply(Skeleton skeleton, float lastTime, float time, ArrayList<Event> events, float alpha);
 	}
 
 	/** Base class for frames that use an interpolation bezier curve. */
@@ -138,35 +159,40 @@ public class Animation {
 
 		private final float[] curves; // dfx, dfy, ddfx, ddfy, dddfx, dddfy, ...
 
-		public CurveTimeline (int frameCount) {
+		public CurveTimeline(int frameCount) {
 			curves = new float[(frameCount - 1) * 6];
 		}
 
-		public int getFrameCount () {
+		public int getFrameCount() {
 			return curves.length / 6 + 1;
 		}
 
-		public void setLinear (int frameIndex) {
+		public void setLinear(int frameIndex) {
 			curves[frameIndex * 6] = LINEAR;
 		}
 
-		public void setStepped (int frameIndex) {
+		public void setStepped(int frameIndex) {
 			curves[frameIndex * 6] = STEPPED;
 		}
 
-		public float getCurveType (int frameIndex) {
+		public float getCurveType(int frameIndex) {
 			int index = frameIndex * 6;
-			if (index == curves.length) return LINEAR;
+			if (index == curves.length)
+				return LINEAR;
 			float type = curves[index];
-			if (type == LINEAR) return LINEAR;
-			if (type == STEPPED) return STEPPED;
+			if (type == LINEAR)
+				return LINEAR;
+			if (type == STEPPED)
+				return STEPPED;
 			return BEZIER;
 		}
 
-		/** Sets the control handle positions for an interpolation bezier curve used to transition from this keyframe to the next.
-		 * cx1 and cx2 are from 0 to 1, representing the percent of time between the two keyframes. cy1 and cy2 are the percent of
-		 * the difference between the keyframe's values. */
-		public void setCurve (int frameIndex, float cx1, float cy1, float cx2, float cy2) {
+		/**
+		 * Sets the control handle positions for an interpolation bezier curve used to transition from this keyframe to the next. cx1 and cx2 are from
+		 * 0 to 1, representing the percent of time between the two keyframes. cy1 and cy2 are the percent of the difference between the keyframe's
+		 * values.
+		 */
+		public void setCurve(int frameIndex, float cx1, float cy1, float cx2, float cy2) {
 			float subdiv_step = 1f / BEZIER_SEGMENTS;
 			float subdiv_step2 = subdiv_step * subdiv_step;
 			float subdiv_step3 = subdiv_step2 * subdiv_step;
@@ -188,12 +214,14 @@ public class Animation {
 			curves[i + 5] = tmp2y * pre5;
 		}
 
-		public float getCurvePercent (int frameIndex, float percent) {
+		public float getCurvePercent(int frameIndex, float percent) {
 			int curveIndex = frameIndex * 6;
 			float[] curves = this.curves;
 			float dfx = curves[curveIndex];
-			if (dfx == LINEAR) return percent;
-			if (dfx == STEPPED) return 0;
+			if (dfx == LINEAR)
+				return percent;
+			if (dfx == STEPPED)
+				return 0;
 			float dfy = curves[curveIndex + 1];
 			float ddfx = curves[curveIndex + 2];
 			float ddfy = curves[curveIndex + 3];
@@ -207,7 +235,8 @@ public class Animation {
 					float prevY = y - dfy;
 					return prevY + (y - prevY) * (percent - prevX) / (x - prevX);
 				}
-				if (i == 0) break;
+				if (i == 0)
+					break;
 				i--;
 				dfx += ddfx;
 				dfy += ddfy;
@@ -227,43 +256,44 @@ public class Animation {
 		int boneIndex;
 		private final float[] frames; // time, angle, ...
 
-		public RotateTimeline (int frameCount) {
+		public RotateTimeline(int frameCount) {
 			super(frameCount);
 			frames = new float[frameCount * 2];
 		}
 
-		public void setBoneIndex (int boneIndex) {
+		public void setBoneIndex(int boneIndex) {
 			this.boneIndex = boneIndex;
 		}
 
-		public int getBoneIndex () {
+		public int getBoneIndex() {
 			return boneIndex;
 		}
 
-		public float[] getFrames () {
+		public float[] getFrames() {
 			return frames;
 		}
 
 		/** Sets the time and angle of the specified keyframe. */
-		public void setFrame (int frameIndex, float time, float angle) {
+		public void setFrame(int frameIndex, float time, float angle) {
 			frameIndex *= 2;
 			frames[frameIndex] = time;
 			frames[frameIndex + 1] = angle;
 		}
 
-		public void apply (Skeleton skeleton, float lastTime, float time, ArrayList<Event> events, float alpha) {
+		public void apply(Skeleton skeleton, float lastTime, float time, ArrayList<Event> events, float alpha) {
 			float[] frames = this.frames;
-			if (time < frames[0]) return; // Time is before first frame.
+			if (time < frames[0])
+				return; // Time is before first frame.
 
 			Bone bone = skeleton.bones.get(boneIndex);
 
 			if (time >= frames[frames.length - 2]) { // Time is after last frame.
-				float amount = bone.data.rotation + frames[frames.length - 1] - bone.rotation;
+				float amount = bone.data.rotation + frames[frames.length - 1] - bone.getRotation();
 				while (amount > 180)
 					amount -= 360;
 				while (amount < -180)
 					amount += 360;
-				bone.rotation += amount * alpha;
+				bone.setRotation(bone.getRotation() + amount * alpha);
 				return;
 			}
 
@@ -280,12 +310,12 @@ public class Animation {
 				amount -= 360;
 			while (amount < -180)
 				amount += 360;
-			amount = bone.data.rotation + (prevFrameValue + amount * percent) - bone.rotation;
+			amount = bone.data.rotation + (prevFrameValue + amount * percent) - bone.getRotation();
 			while (amount > 180)
 				amount -= 360;
 			while (amount < -180)
 				amount += 360;
-			bone.rotation += amount * alpha;
+			bone.setRotation(bone.getRotation() + amount * alpha);
 		}
 	}
 
@@ -297,40 +327,41 @@ public class Animation {
 		int boneIndex;
 		final float[] frames; // time, x, y, ...
 
-		public TranslateTimeline (int frameCount) {
+		public TranslateTimeline(int frameCount) {
 			super(frameCount);
 			frames = new float[frameCount * 3];
 		}
 
-		public void setBoneIndex (int boneIndex) {
+		public void setBoneIndex(int boneIndex) {
 			this.boneIndex = boneIndex;
 		}
 
-		public int getBoneIndex () {
+		public int getBoneIndex() {
 			return boneIndex;
 		}
 
-		public float[] getFrames () {
+		public float[] getFrames() {
 			return frames;
 		}
 
 		/** Sets the time and value of the specified keyframe. */
-		public void setFrame (int frameIndex, float time, float x, float y) {
+		public void setFrame(int frameIndex, float time, float x, float y) {
 			frameIndex *= 3;
 			frames[frameIndex] = time;
 			frames[frameIndex + 1] = x;
 			frames[frameIndex + 2] = y;
 		}
 
-		public void apply (Skeleton skeleton, float lastTime, float time, ArrayList<Event> events, float alpha) {
+		public void apply(Skeleton skeleton, float lastTime, float time, ArrayList<Event> events, float alpha) {
 			float[] frames = this.frames;
-			if (time < frames[0]) return; // Time is before first frame.
+			if (time < frames[0])
+				return; // Time is before first frame.
 
 			Bone bone = skeleton.bones.get(boneIndex);
 
 			if (time >= frames[frames.length - 3]) { // Time is after last frame.
-				bone.x += (bone.data.x + frames[frames.length - 2] - bone.x) * alpha;
-				bone.y += (bone.data.y + frames[frames.length - 1] - bone.y) * alpha;
+				bone.setX(bone.getX() + (bone.data.x + frames[frames.length - 2] - bone.getX()) * alpha);
+				bone.setY(bone.getY() + (bone.data.y + frames[frames.length - 1] - bone.getY()) * alpha);
 				return;
 			}
 
@@ -343,24 +374,25 @@ public class Animation {
 			percent = (percent < 0f ? 0f : percent > 1f ? 1f : percent);
 			percent = getCurvePercent(frameIndex / 3 - 1, percent);
 
-			bone.x += (bone.data.x + prevFrameX + (frames[frameIndex + FRAME_X] - prevFrameX) * percent - bone.x) * alpha;
-			bone.y += (bone.data.y + prevFrameY + (frames[frameIndex + FRAME_Y] - prevFrameY) * percent - bone.y) * alpha;
+			bone.setX(bone.getX() + (bone.data.x + prevFrameX + (frames[frameIndex + FRAME_X] - prevFrameX) * percent - bone.getX()) * alpha);
+			bone.setY(bone.getY() + (bone.data.y + prevFrameY + (frames[frameIndex + FRAME_Y] - prevFrameY) * percent - bone.getY()) * alpha);
 		}
 	}
 
 	static public class ScaleTimeline extends TranslateTimeline {
-		public ScaleTimeline (int frameCount) {
+		public ScaleTimeline(int frameCount) {
 			super(frameCount);
 		}
 
-		public void apply (Skeleton skeleton, float lastTime, float time, ArrayList<Event> events, float alpha) {
+		public void apply(Skeleton skeleton, float lastTime, float time, ArrayList<Event> events, float alpha) {
 			float[] frames = this.frames;
-			if (time < frames[0]) return; // Time is before first frame.
+			if (time < frames[0])
+				return; // Time is before first frame.
 
 			Bone bone = skeleton.bones.get(boneIndex);
 			if (time >= frames[frames.length - 3]) { // Time is after last frame.
-				bone.scaleX += (bone.data.scaleX - 1 + frames[frames.length - 2] - bone.scaleX) * alpha;
-				bone.scaleY += (bone.data.scaleY - 1 + frames[frames.length - 1] - bone.scaleY) * alpha;
+				bone.setScaleX(bone.getScaleX() + (bone.data.scaleX - 1 + frames[frames.length - 2] - bone.getScaleX()) * alpha);
+				bone.setScaleY(bone.getScaleY() + (bone.data.scaleY - 1 + frames[frames.length - 1] - bone.getScaleY()) * alpha);
 				return;
 			}
 
@@ -373,10 +405,10 @@ public class Animation {
 			percent = (percent < 0f ? 0f : percent > 1f ? 1f : percent);
 			percent = getCurvePercent(frameIndex / 3 - 1, percent);
 
-			bone.scaleX += (bone.data.scaleX - 1 + prevFrameX + (frames[frameIndex + FRAME_X] - prevFrameX) * percent - bone.scaleX)
-				* alpha;
-			bone.scaleY += (bone.data.scaleY - 1 + prevFrameY + (frames[frameIndex + FRAME_Y] - prevFrameY) * percent - bone.scaleY)
-				* alpha;
+			bone.setScaleX(bone.getScaleX()
+					+ (bone.data.scaleX - 1 + prevFrameX + (frames[frameIndex + FRAME_X] - prevFrameX) * percent - bone.getScaleX()) * alpha);
+			bone.setScaleY(bone.getScaleY()
+					+ (bone.data.scaleY - 1 + prevFrameY + (frames[frameIndex + FRAME_Y] - prevFrameY) * percent - bone.getScaleY()) * alpha);
 		}
 	}
 
@@ -390,25 +422,25 @@ public class Animation {
 		int slotIndex;
 		private final float[] frames; // time, r, g, b, a, ...
 
-		public ColorTimeline (int frameCount) {
+		public ColorTimeline(int frameCount) {
 			super(frameCount);
 			frames = new float[frameCount * 5];
 		}
 
-		public void setSlotIndex (int slotIndex) {
+		public void setSlotIndex(int slotIndex) {
 			this.slotIndex = slotIndex;
 		}
 
-		public int getSlotIndex () {
+		public int getSlotIndex() {
 			return slotIndex;
 		}
 
-		public float[] getFrames () {
+		public float[] getFrames() {
 			return frames;
 		}
 
 		/** Sets the time and value of the specified keyframe. */
-		public void setFrame (int frameIndex, float time, float r, float g, float b, float a) {
+		public void setFrame(int frameIndex, float time, float r, float g, float b, float a) {
 			frameIndex *= 5;
 			frames[frameIndex] = time;
 			frames[frameIndex + 1] = r;
@@ -417,9 +449,10 @@ public class Animation {
 			frames[frameIndex + 4] = a;
 		}
 
-		public void apply (Skeleton skeleton, float lastTime, float time, ArrayList<Event> events, float alpha) {
+		public void apply(Skeleton skeleton, float lastTime, float time, ArrayList<Event> events, float alpha) {
 			float[] frames = this.frames;
-			if (time < frames[0]) return; // Time is before first frame.
+			if (time < frames[0])
+				return; // Time is before first frame.
 
 			Slot slot = skeleton.slots.get(slotIndex);
 
@@ -471,40 +504,41 @@ public class Animation {
 		private final float[] frames; // time, ...
 		private final String[] attachmentNames;
 
-		public AttachmentTimeline (int frameCount) {
+		public AttachmentTimeline(int frameCount) {
 			frames = new float[frameCount];
 			attachmentNames = new String[frameCount];
 		}
 
-		public int getFrameCount () {
+		public int getFrameCount() {
 			return frames.length;
 		}
 
-		public int getSlotIndex () {
+		public int getSlotIndex() {
 			return slotIndex;
 		}
 
-		public void setSlotIndex (int slotIndex) {
+		public void setSlotIndex(int slotIndex) {
 			this.slotIndex = slotIndex;
 		}
 
-		public float[] getFrames () {
+		public float[] getFrames() {
 			return frames;
 		}
 
-		public String[] getAttachmentNames () {
+		public String[] getAttachmentNames() {
 			return attachmentNames;
 		}
 
 		/** Sets the time and value of the specified keyframe. */
-		public void setFrame (int frameIndex, float time, String attachmentName) {
+		public void setFrame(int frameIndex, float time, String attachmentName) {
 			frames[frameIndex] = time;
 			attachmentNames[frameIndex] = attachmentName;
 		}
 
-		public void apply (Skeleton skeleton, float lastTime, float time, ArrayList<Event> events, float alpha) {
+		public void apply(Skeleton skeleton, float lastTime, float time, ArrayList<Event> events, float alpha) {
 			float[] frames = this.frames;
-			if (time < frames[0]) return; // Time is before first frame.
+			if (time < frames[0])
+				return; // Time is before first frame.
 
 			int frameIndex;
 			if (time >= frames[frames.length - 1]) // Time is after last frame.
@@ -513,8 +547,7 @@ public class Animation {
 				frameIndex = binarySearch(frames, time, 1) - 1;
 
 			String attachmentName = attachmentNames[frameIndex];
-			skeleton.slots.get(slotIndex).setAttachment(
-				attachmentName == null ? null : skeleton.getAttachment(slotIndex, attachmentName));
+			skeleton.slots.get(slotIndex).setAttachment(attachmentName == null ? null : skeleton.getAttachment(slotIndex, attachmentName));
 		}
 	}
 
@@ -522,32 +555,33 @@ public class Animation {
 		private final float[] frames; // time, ...
 		private final Event[] events;
 
-		public EventTimeline (int frameCount) {
+		public EventTimeline(int frameCount) {
 			frames = new float[frameCount];
 			events = new Event[frameCount];
 		}
 
-		public int getFrameCount () {
+		public int getFrameCount() {
 			return frames.length;
 		}
 
-		public float[] getFrames () {
+		public float[] getFrames() {
 			return frames;
 		}
 
-		public Event[] getEvents () {
+		public Event[] getEvents() {
 			return events;
 		}
 
 		/** Sets the time of the specified keyframe. */
-		public void setFrame (int frameIndex, float time, Event event) {
+		public void setFrame(int frameIndex, float time, Event event) {
 			frames[frameIndex] = time;
 			events[frameIndex] = event;
 		}
 
 		/** Fires events for frames > lastTime and <= time. */
-		public void apply (Skeleton skeleton, float lastTime, float time, ArrayList<Event> firedEvents, float alpha) {
-			if (firedEvents == null) return;
+		public void apply(Skeleton skeleton, float lastTime, float time, ArrayList<Event> firedEvents, float alpha) {
+			if (firedEvents == null)
+				return;
 			float[] frames = this.frames;
 			int frameCount = frames.length;
 
@@ -556,7 +590,8 @@ public class Animation {
 				lastTime = -1f;
 			} else if (lastTime >= frames[frameCount - 1]) // Last time is after last frame.
 				return;
-			if (time < frames[0]) return; // Time is before first frame.
+			if (time < frames[0])
+				return; // Time is before first frame.
 
 			int frameIndex;
 			if (lastTime < frames[0])
@@ -565,7 +600,8 @@ public class Animation {
 				frameIndex = binarySearch(frames, lastTime, 1);
 				float frame = frames[frameIndex];
 				while (frameIndex > 0) { // Fire multiple events with the same frame.
-					if (frames[frameIndex - 1] != frame) break;
+					if (frames[frameIndex - 1] != frame)
+						break;
 					frameIndex--;
 				}
 			}
@@ -578,33 +614,38 @@ public class Animation {
 		private final float[] frames; // time, ...
 		private final int[][] drawOrders;
 
-		public DrawOrderTimeline (int frameCount) {
+		public DrawOrderTimeline(int frameCount) {
 			frames = new float[frameCount];
 			drawOrders = new int[frameCount][];
 		}
 
-		public int getFrameCount () {
+		public int getFrameCount() {
 			return frames.length;
 		}
 
-		public float[] getFrames () {
+		public float[] getFrames() {
 			return frames;
 		}
 
-		public int[][] getDrawOrders () {
+		public int[][] getDrawOrders() {
 			return drawOrders;
 		}
 
-		/** Sets the time of the specified keyframe.
-		 * @param drawOrder May be null to use bind pose draw order. */
-		public void setFrame (int frameIndex, float time, int[] drawOrder) {
+		/**
+		 * Sets the time of the specified keyframe.
+		 * 
+		 * @param drawOrder
+		 *            May be null to use bind pose draw order.
+		 */
+		public void setFrame(int frameIndex, float time, int[] drawOrder) {
 			frames[frameIndex] = time;
 			drawOrders[frameIndex] = drawOrder;
 		}
 
-		public void apply (Skeleton skeleton, float lastTime, float time, ArrayList<Event> firedEvents, float alpha) {
+		public void apply(Skeleton skeleton, float lastTime, float time, ArrayList<Event> firedEvents, float alpha) {
 			float[] frames = this.frames;
-			if (time < frames[0]) return; // Time is before first frame.
+			if (time < frames[0])
+				return; // Time is before first frame.
 
 			int frameIndex;
 			if (time >= frames[frames.length - 1]) // Time is after last frame.
@@ -633,51 +674,53 @@ public class Animation {
 		int slotIndex;
 		Attachment attachment;
 
-		public FfdTimeline (int frameCount) {
+		public FfdTimeline(int frameCount) {
 			super(frameCount);
 			frames = new float[frameCount];
 			frameVertices = new float[frameCount][];
 		}
 
-		public void setSlotIndex (int slotIndex) {
+		public void setSlotIndex(int slotIndex) {
 			this.slotIndex = slotIndex;
 		}
 
-		public int getSlotIndex () {
+		public int getSlotIndex() {
 			return slotIndex;
 		}
 
-		public void setAttachment (Attachment attachment) {
+		public void setAttachment(Attachment attachment) {
 			this.attachment = attachment;
 		}
 
-		public Attachment getAttachment () {
+		public Attachment getAttachment() {
 			return attachment;
 		}
 
-		public float[] getFrames () {
+		public float[] getFrames() {
 			return frames;
 		}
 
-		public float[][] getVertices () {
+		public float[][] getVertices() {
 			return frameVertices;
 		}
 
 		/** Sets the time of the specified keyframe. */
-		public void setFrame (int frameIndex, float time, float[] vertices) {
+		public void setFrame(int frameIndex, float time, float[] vertices) {
 			frames[frameIndex] = time;
 			frameVertices[frameIndex] = vertices;
 		}
 
-		public void apply (Skeleton skeleton, float lastTime, float time, ArrayList<Event> firedEvents, float alpha) {
+		public void apply(Skeleton skeleton, float lastTime, float time, ArrayList<Event> firedEvents, float alpha) {
 			Slot slot = skeleton.slots.get(slotIndex);
-			if (slot.getAttachment() != attachment) return;
+			if (slot.getAttachment() != attachment)
+				return;
 
 			float[] vertices = slot.getAttachmentVertices();
 			slot.attachmentVerticesCount = 0;
 
 			float[] frames = this.frames;
-			if (time < frames[0]) return; // Time is before first frame.
+			if (time < frames[0])
+				return; // Time is before first frame.
 
 			float[][] frameVertices = this.frameVertices;
 			int vertexCount = frameVertices[0].length;

@@ -30,9 +30,6 @@
 
 package com.esotericsoftware.spine.attachments;
 
-import java.util.ArrayList;
-
-import com.esotericsoftware.spine.Bone;
 import com.esotericsoftware.spine.Slot;
 
 /** Attachment that displays a texture region. */
@@ -78,37 +75,38 @@ public class SkinnedMeshAttachment extends Attachment {
 	}
 
 	public void computeWorldVertices(float x, float y, Slot slot, float[] worldVertices) {
-		ArrayList<Bone> skeletonBones = slot.getSkeleton().getBones();
-		float[] weights = this.weights;
-		int[] bones = this.bones;
-		if (slot.getAttachmentVerticesCount() == 0) {
-			for (int w = 0, v = 0, b = 0, n = bones.length; v < n; w += 2) {
-				float wx = 0, wy = 0;
-				int nn = bones[v++] + v;
-				for (; v < nn; v++, b += 3) {
-					Bone bone = (Bone) skeletonBones.get(bones[v]);
-					float vx = weights[b], vy = weights[b + 1], weight = weights[b + 2];
-					wx += (vx * bone.getM00() + vy * bone.getM01() + bone.getWorldX()) * weight;
-					wy += (vx * bone.getM10() + vy * bone.getM11() + bone.getWorldY()) * weight;
-				}
-				worldVertices[w] = wx + x;
-				worldVertices[w + 1] = wy + y;
-			}
-		} else {
-			float[] ffd = slot.getAttachmentVertices();
-			for (int w = 0, v = 0, b = 0, f = 0, n = bones.length; v < n; w += 2) {
-				float wx = 0, wy = 0;
-				int nn = bones[v++] + v;
-				for (; v < nn; v++, b += 3, f += 2) {
-					Bone bone = (Bone) skeletonBones.get(bones[v]);
-					float vx = weights[b] + ffd[f], vy = weights[b + 1] + ffd[f + 1], weight = weights[b + 2];
-					wx += (vx * bone.getM00() + vy * bone.getM01() + bone.getWorldX()) * weight;
-					wy += (vx * bone.getM10() + vy * bone.getM11() + bone.getWorldY()) * weight;
-				}
-				worldVertices[w] = wx + x;
-				worldVertices[w + 1] = wy + y;
-			}
-		}
+		// FIXME
+		// ArrayList<Bone> skeletonBones = slot.getSkeleton().getBones();
+		// float[] weights = this.weights;
+		// int[] bones = this.bones;
+		// if (slot.getAttachmentVerticesCount() == 0) {
+		// for (int w = 0, v = 0, b = 0, n = bones.length; v < n; w += 2) {
+		// float wx = 0, wy = 0;
+		// int nn = bones[v++] + v;
+		// for (; v < nn; v++, b += 3) {
+		// Bone bone = (Bone) skeletonBones.get(bones[v]);
+		// float vx = weights[b], vy = weights[b + 1], weight = weights[b + 2];
+		// wx += (vx * bone.getM00() + vy * bone.getM01() + bone.getWorldX()) * weight;
+		// wy += (vx * bone.getM10() + vy * bone.getM11() + bone.getWorldY()) * weight;
+		// }
+		// worldVertices[w] = wx + x;
+		// worldVertices[w + 1] = wy + y;
+		// }
+		// } else {
+		// float[] ffd = slot.getAttachmentVertices();
+		// for (int w = 0, v = 0, b = 0, f = 0, n = bones.length; v < n; w += 2) {
+		// float wx = 0, wy = 0;
+		// int nn = bones[v++] + v;
+		// for (; v < nn; v++, b += 3, f += 2) {
+		// Bone bone = (Bone) skeletonBones.get(bones[v]);
+		// float vx = weights[b] + ffd[f], vy = weights[b + 1] + ffd[f + 1], weight = weights[b + 2];
+		// wx += (vx * bone.getM00() + vy * bone.getM01() + bone.getWorldX()) * weight;
+		// wy += (vx * bone.getM10() + vy * bone.getM11() + bone.getWorldY()) * weight;
+		// }
+		// worldVertices[w] = wx + x;
+		// worldVertices[w + 1] = wy + y;
+		// }
+		// }
 	}
 
 	public int[] getBones() {

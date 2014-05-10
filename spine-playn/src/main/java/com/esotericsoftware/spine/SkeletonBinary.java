@@ -69,25 +69,27 @@ public class SkeletonBinary {
 	private final AttachmentLoader attachmentLoader;
 	private float scale = 1;
 
-	public SkeletonBinary (Atlas atlas) {
+	public SkeletonBinary(Atlas atlas) {
 		attachmentLoader = new AtlasAttachmentLoader(atlas);
 	}
 
-	public SkeletonBinary (AttachmentLoader attachmentLoader) {
+	public SkeletonBinary(AttachmentLoader attachmentLoader) {
 		this.attachmentLoader = attachmentLoader;
 	}
 
-	public float getScale () {
+	public float getScale() {
 		return scale;
 	}
 
-	public void setScale (float scale) {
+	public void setScale(float scale) {
 		this.scale = scale;
 	}
 
-	public SkeletonData readSkeletonData (String sname, InputStream inputStream) {
-		if (sname == null) throw new IllegalArgumentException("sname cannot be null.");
-		if (inputStream == null) throw new IllegalArgumentException("inputStream cannot be null.");
+	public SkeletonData readSkeletonData(String sname, InputStream inputStream) {
+		if (sname == null)
+			throw new IllegalArgumentException("sname cannot be null.");
+		if (inputStream == null)
+			throw new IllegalArgumentException("inputStream cannot be null.");
 
 		float scale = this.scale;
 
@@ -98,13 +100,14 @@ public class SkeletonBinary {
 
 		try {
 			boolean nonessential = input.readBoolean();
-			
+
 			// Bones.
 			for (int i = 0, n = input.readInt(true); i < n; i++) {
 				String name = input.readString();
 				BoneData parent = null;
 				int parentIndex = input.readInt(true) - 1;
-				if (parentIndex != -1) parent = skeletonData.bones.get(parentIndex);
+				if (parentIndex != -1)
+					parent = skeletonData.bones.get(parentIndex);
 				BoneData boneData = new BoneData(name, parent);
 				boneData.x = input.readFloat() * scale;
 				boneData.y = input.readFloat() * scale;
@@ -178,9 +181,10 @@ public class SkeletonBinary {
 		return skeletonData;
 	}
 
-	private Skin readSkin (DataInput input, String skinName, boolean nonessential) throws IOException {
+	private Skin readSkin(DataInput input, String skinName, boolean nonessential) throws IOException {
 		int slotCount = input.readInt(true);
-		if (slotCount == 0) return null;
+		if (slotCount == 0)
+			return null;
 		Skin skin = new Skin(skinName);
 		for (int i = 0; i < slotCount; i++) {
 			int slotIndex = input.readInt(true);
@@ -192,18 +196,21 @@ public class SkeletonBinary {
 		return skin;
 	}
 
-	private Attachment readAttachment (DataInput input, Skin skin, String attachmentName, boolean nonessential) throws IOException {
+	private Attachment readAttachment(DataInput input, Skin skin, String attachmentName, boolean nonessential) throws IOException {
 		float scale = this.scale;
 
 		String name = input.readString();
-		if (name == null) name = attachmentName;
+		if (name == null)
+			name = attachmentName;
 
 		switch (AttachmentType.values()[input.readByte()]) {
 		case region: {
 			String path = input.readString();
-			if (path == null) path = name;
+			if (path == null)
+				path = name;
 			RegionAttachment region = attachmentLoader.newRegionAttachment(skin, name, path);
-			if (region == null) return null;
+			if (region == null)
+				return null;
 			region.setX(input.readFloat() * scale);
 			region.setY(input.readFloat() * scale);
 			region.setScaleX(input.readFloat());
@@ -215,19 +222,20 @@ public class SkeletonBinary {
 			region.setR(((color) >>> 24) / 255f);
 			region.setG(((color & 0x00ff0000) >>> 16) / 255f);
 			region.setB(((color & 0x0000ff00) >>> 8) / 255f);
-			region.setA(((color & 0x000000ff)) / 255f);
-			region.updateOffset();
+			region.setA(((color & 0x000000ff)) / 255f); // FIXME region.updateOffset();
 			return region;
 		}
 		case boundingbox: {
 			BoundingBoxAttachment box = attachmentLoader.newBoundingBoxAttachment(skin, name);
-			if (box == null) return null;
+			if (box == null)
+				return null;
 			box.setVertices(readFloatArray(input, scale));
 			return box;
 		}
 		case mesh: {
 			String path = input.readString();
-			if (path == null) path = name;
+			if (path == null)
+				path = name;
 			MeshAttachment mesh = attachmentLoader.newMeshAttachment(skin, name, path);
 			float[] uvs = readFloatArray(input, 1);
 			short[] triangles = readShortArray(input);
@@ -251,7 +259,8 @@ public class SkeletonBinary {
 		}
 		case skinnedmesh: {
 			String path = input.readString();
-			if (path == null) path = name;
+			if (path == null)
+				path = name;
 			SkinnedMeshAttachment mesh = attachmentLoader.newSkinnedMeshAttachment(skin, name, path);
 			float[] uvs = readFloatArray(input, 1);
 			short[] triangles = readShortArray(input);
@@ -259,11 +268,11 @@ public class SkeletonBinary {
 			int vertexCount = input.readInt(true);
 			ArrayList<Float> weights = new ArrayList<Float>(uvs.length * 3 * 3);
 			ArrayList<Integer> bones = new ArrayList<Integer>(uvs.length * 3);
-			for (int i = 0, n = vertexCount; i < n; ) {
+			for (int i = 0, n = vertexCount; i < n;) {
 				int boneCount = (int) input.readFloat();
 				bones.add(boneCount);
-				for (int nn = i + boneCount * 4; i < nn; ) {
-					bones.add((int)input.readFloat());
+				for (int nn = i + boneCount * 4; i < nn;) {
+					bones.add((int) input.readFloat());
 					weights.add(input.readFloat() * scale);
 					weights.add(input.readFloat() * scale);
 					weights.add(input.readFloat());
@@ -300,7 +309,7 @@ public class SkeletonBinary {
 		return null;
 	}
 
-	private float[] readFloatArray (DataInput input, float scale) throws IOException {
+	private float[] readFloatArray(DataInput input, float scale) throws IOException {
 		int n = input.readInt(true);
 		float[] array = new float[n];
 		if (scale == 1) {
@@ -313,7 +322,7 @@ public class SkeletonBinary {
 		return array;
 	}
 
-	private short[] readShortArray (DataInput input) throws IOException {
+	private short[] readShortArray(DataInput input) throws IOException {
 		int n = input.readInt(true);
 		short[] array = new short[n];
 		for (int i = 0; i < n; i++)
@@ -321,7 +330,7 @@ public class SkeletonBinary {
 		return array;
 	}
 
-	private int[] readIntArray (DataInput input) throws IOException {
+	private int[] readIntArray(DataInput input) throws IOException {
 		int n = input.readInt(true);
 		int[] array = new int[n];
 		for (int i = 0; i < n; i++)
@@ -329,7 +338,7 @@ public class SkeletonBinary {
 		return array;
 	}
 
-	private void readAnimation (String name, DataInput input, SkeletonData skeletonData) {
+	private void readAnimation(String name, DataInput input, SkeletonData skeletonData) {
 		ArrayList<Timeline> timelines = new ArrayList<Timeline>();
 		float scale = this.scale;
 		float duration = 0;
@@ -353,7 +362,8 @@ public class SkeletonBinary {
 							float b = ((color & 0x0000ff00) >>> 8) / 255f;
 							float a = ((color & 0x000000ff)) / 255f;
 							timeline.setFrame(frameIndex, time, r, g, b, a);
-							if (frameIndex < frameCount - 1) readCurve(input, frameIndex, timeline);
+							if (frameIndex < frameCount - 1)
+								readCurve(input, frameIndex, timeline);
 						}
 						timelines.add(timeline);
 						duration = Math.max(duration, timeline.getFrames()[frameCount * 5 - 5]);
@@ -383,7 +393,8 @@ public class SkeletonBinary {
 						timeline.boneIndex = boneIndex;
 						for (int frameIndex = 0; frameIndex < frameCount; frameIndex++) {
 							timeline.setFrame(frameIndex, input.readFloat(), input.readFloat());
-							if (frameIndex < frameCount - 1) readCurve(input, frameIndex, timeline);
+							if (frameIndex < frameCount - 1)
+								readCurve(input, frameIndex, timeline);
 						}
 						timelines.add(timeline);
 						duration = Math.max(duration, timeline.getFrames()[frameCount * 2 - 2]);
@@ -401,9 +412,9 @@ public class SkeletonBinary {
 						}
 						timeline.boneIndex = boneIndex;
 						for (int frameIndex = 0; frameIndex < frameCount; frameIndex++) {
-							timeline.setFrame(frameIndex, input.readFloat(), input.readFloat() * timelineScale, input.readFloat()
-								* timelineScale);
-							if (frameIndex < frameCount - 1) readCurve(input, frameIndex, timeline);
+							timeline.setFrame(frameIndex, input.readFloat(), input.readFloat() * timelineScale, input.readFloat() * timelineScale);
+							if (frameIndex < frameCount - 1)
+								readCurve(input, frameIndex, timeline);
 						}
 						timelines.add(timeline);
 						duration = Math.max(duration, timeline.getFrames()[frameCount * 3 - 3]);
@@ -429,14 +440,14 @@ public class SkeletonBinary {
 							float[] vertices;
 							int vertexCount;
 							if (attachment instanceof MeshAttachment)
-								vertexCount = ((MeshAttachment)attachment).getVertices().length;
+								vertexCount = ((MeshAttachment) attachment).getVertices().length;
 							else
-								vertexCount = ((SkinnedMeshAttachment)attachment).getWeights().length / 3 * 2;
+								vertexCount = ((SkinnedMeshAttachment) attachment).getWeights().length / 3 * 2;
 
 							int end = input.readInt(true);
 							if (end == 0) {
 								if (attachment instanceof MeshAttachment)
-									vertices = ((MeshAttachment)attachment).getVertices();
+									vertices = ((MeshAttachment) attachment).getVertices();
 								else
 									vertices = new float[vertexCount];
 							} else {
@@ -451,14 +462,15 @@ public class SkeletonBinary {
 										vertices[v] = input.readFloat() * scale;
 								}
 								if (attachment instanceof MeshAttachment) {
-									float[] meshVertices = ((MeshAttachment)attachment).getVertices();
+									float[] meshVertices = ((MeshAttachment) attachment).getVertices();
 									for (int v = 0, vn = vertices.length; v < vn; v++)
 										vertices[v] += meshVertices[v];
 								}
 							}
 
 							timeline.setFrame(frameIndex, time, vertices);
-							if (frameIndex < frameCount - 1) readCurve(input, frameIndex, timeline);
+							if (frameIndex < frameCount - 1)
+								readCurve(input, frameIndex, timeline);
 						}
 						timelines.add(timeline);
 						duration = Math.max(duration, timeline.getFrames()[frameCount - 1]);
@@ -491,7 +503,8 @@ public class SkeletonBinary {
 						unchanged[unchangedIndex++] = originalIndex++;
 					// Fill in unchanged items.
 					for (int ii = slotCount - 1; ii >= 0; ii--)
-						if (drawOrder[ii] == -1) drawOrder[ii] = unchanged[--unchangedIndex];
+						if (drawOrder[ii] == -1)
+							drawOrder[ii] = unchanged[--unchangedIndex];
 					timeline.setFrame(i, input.readFloat(), drawOrder);
 				}
 				timelines.add(timeline);
@@ -522,7 +535,7 @@ public class SkeletonBinary {
 		skeletonData.addAnimation(new Animation(name, timelines, duration));
 	}
 
-	private void readCurve (DataInput input, int frameIndex, CurveTimeline timeline) throws IOException {
+	private void readCurve(DataInput input, int frameIndex, CurveTimeline timeline) throws IOException {
 		switch (input.readByte()) {
 		case CURVE_STEPPED:
 			timeline.setStepped(frameIndex);
@@ -533,22 +546,24 @@ public class SkeletonBinary {
 		}
 	}
 
-	void setCurve (CurveTimeline timeline, int frameIndex, float cx1, float cy1, float cx2, float cy2) {
+	void setCurve(CurveTimeline timeline, int frameIndex, float cx1, float cy1, float cx2, float cy2) {
 		timeline.setCurve(frameIndex, cx1, cy1, cx2, cy2);
 	}
-	
-	/** Taken from LibGDX.
-	 * Extends {@link DataInputStream} with additional convenience methods.
-	 * @author Nathan Sweet */
+
+	/**
+	 * Taken from LibGDX. Extends {@link DataInputStream} with additional convenience methods.
+	 * 
+	 * @author Nathan Sweet
+	 */
 	public static class DataInput extends DataInputStream {
 		private char[] chars = new char[32];
 
-		public DataInput (InputStream in) {
+		public DataInput(InputStream in) {
 			super(in);
 		}
 
 		/** Reads a 1-5 byte int. */
-		public int readInt (boolean optimizePositive) throws IOException {
+		public int readInt(boolean optimizePositive) throws IOException {
 			int b = read();
 			int result = b & 0x7F;
 			if ((b & 0x80) != 0) {
@@ -570,9 +585,12 @@ public class SkeletonBinary {
 			return optimizePositive ? result : ((result >>> 1) ^ -(result & 1));
 		}
 
-		/** Reads the length and string of UTF8 characters, or null.
-		 * @return May be null. */
-		public String readString () throws IOException {
+		/**
+		 * Reads the length and string of UTF8 characters, or null.
+		 * 
+		 * @return May be null.
+		 */
+		public String readString() throws IOException {
 			int charCount = readInt(true);
 			switch (charCount) {
 			case 0:
@@ -581,22 +599,25 @@ public class SkeletonBinary {
 				return "";
 			}
 			charCount--;
-			if (chars.length < charCount) chars = new char[charCount];
+			if (chars.length < charCount)
+				chars = new char[charCount];
 			char[] chars = this.chars;
 			// Try to read 7 bit ASCII chars.
 			int charIndex = 0;
 			int b = 0;
 			while (charIndex < charCount) {
 				b = read();
-				if (b > 127) break;
-				chars[charIndex++] = (char)b;
+				if (b > 127)
+					break;
+				chars[charIndex++] = (char) b;
 			}
 			// If a char was not ASCII, finish with slow path.
-			if (charIndex < charCount) readUtf8_slow(charCount, charIndex, b);
+			if (charIndex < charCount)
+				readUtf8_slow(charCount, charIndex, b);
 			return new String(chars, 0, charCount);
 		}
 
-		private void readUtf8_slow (int charCount, int charIndex, int b) throws IOException {
+		private void readUtf8_slow(int charCount, int charIndex, int b) throws IOException {
 			char[] chars = this.chars;
 			while (true) {
 				switch (b >> 4) {
@@ -608,17 +629,18 @@ public class SkeletonBinary {
 				case 5:
 				case 6:
 				case 7:
-					chars[charIndex] = (char)b;
+					chars[charIndex] = (char) b;
 					break;
 				case 12:
 				case 13:
-					chars[charIndex] = (char)((b & 0x1F) << 6 | read() & 0x3F);
+					chars[charIndex] = (char) ((b & 0x1F) << 6 | read() & 0x3F);
 					break;
 				case 14:
-					chars[charIndex] = (char)((b & 0x0F) << 12 | (read() & 0x3F) << 6 | read() & 0x3F);
+					chars[charIndex] = (char) ((b & 0x0F) << 12 | (read() & 0x3F) << 6 | read() & 0x3F);
 					break;
 				}
-				if (++charIndex >= charCount) break;
+				if (++charIndex >= charCount)
+					break;
 				b = read() & 0xFF;
 			}
 		}

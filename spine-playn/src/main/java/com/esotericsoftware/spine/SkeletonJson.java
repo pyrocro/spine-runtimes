@@ -32,6 +32,7 @@ package com.esotericsoftware.spine;
 
 import java.util.ArrayList;
 
+import playn.core.Color;
 import playn.core.Json;
 
 import com.esotericsoftware.spine.Animation.AttachmentTimeline;
@@ -198,7 +199,7 @@ public class SkeletonJson {
 			region.setRotation(map.getNumber("rotation", 0));
 			region.setWidth(map.getNumber("width", 32) * scale);
 			region.setHeight(map.getNumber("height", 32) * scale);
-			region.updateOffset();
+			// FIXME region.updateOffset();
 
 			if (map.containsKey("color")) {
 				String color = map.getString("color");
@@ -334,6 +335,13 @@ public class SkeletonJson {
 		if (hexString.length() != 8)
 			throw new IllegalArgumentException("Color hexidecimal length must be 8, recieved: " + hexString);
 		return Integer.parseInt(hexString.substring(colorIndex * 2, colorIndex * 2 + 2), 16) / 255f;
+	}
+
+	public static int toColor(String hexString) {
+		if (hexString.length() != 8)
+			throw new IllegalArgumentException("Color hexidecimal length must be 8, recieved: " + hexString);
+		return Color.argb(Integer.parseInt(hexString.substring(6, 8), 16), Integer.parseInt(hexString.substring(0, 2), 16),
+				Integer.parseInt(hexString.substring(2, 4), 16), Integer.parseInt(hexString.substring(4, 6), 16));
 	}
 
 	private void readAnimation(String name, Json.Object map, SkeletonData skeletonData) {

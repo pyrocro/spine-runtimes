@@ -30,19 +30,18 @@
 
 package com.esotericsoftware.spine;
 
+import java.util.ArrayList;
+
+import playn.core.GroupLayer;
+import pythagoras.f.FloatMath;
+
 public class Bone {
 	static public boolean yDown;
 
 	final BoneData data;
 	final Bone parent;
-	float x, y;
-	float rotation;
-	float scaleX, scaleY;
 
-	float m00, m01, worldX; // a b x
-	float m10, m11, worldY; // c d y
-	float worldRotation;
-	float worldScaleX, worldScaleY;
+	ArrayList<GroupLayer> layers = new ArrayList<GroupLayer>();
 
 	/**
 	 * @param parent
@@ -53,6 +52,7 @@ public class Bone {
 			throw new IllegalArgumentException("data cannot be null.");
 		this.data = data;
 		this.parent = parent;
+
 		setToSetupPose();
 	}
 
@@ -67,58 +67,22 @@ public class Bone {
 			throw new IllegalArgumentException("bone cannot be null.");
 		this.parent = parent;
 		data = bone.data;
-		x = bone.x;
-		y = bone.y;
-		rotation = bone.rotation;
-		scaleX = bone.scaleX;
-		scaleY = bone.scaleY;
-	}
 
-	/** Computes the world SRT using the parent bone and the local SRT. */
-	public void updateWorldTransform(boolean flipX, boolean flipY) {
-		Bone parent = this.parent;
-		if (parent != null) {
-			worldX = x * parent.m00 + y * parent.m01 + parent.worldX;
-			worldY = x * parent.m10 + y * parent.m11 + parent.worldY;
-			if (data.inheritScale) {
-				worldScaleX = parent.worldScaleX * scaleX;
-				worldScaleY = parent.worldScaleY * scaleY;
-			} else {
-				worldScaleX = scaleX;
-				worldScaleY = scaleY;
-			}
-			worldRotation = data.inheritRotation ? parent.worldRotation + rotation : rotation;
-		} else {
-			worldX = flipX ? -x : x;
-			worldY = flipY != yDown ? -y : y;
-			worldScaleX = scaleX;
-			worldScaleY = scaleY;
-			worldRotation = rotation;
-		}
-		float radians = worldRotation * (float) Math.PI / 180f;
-		float cos = (float) Math.cos(radians);
-		float sin = (float) Math.sin(radians);
-		m00 = cos * worldScaleX;
-		m10 = sin * worldScaleX;
-		m01 = -sin * worldScaleY;
-		m11 = cos * worldScaleY;
-		if (flipX) {
-			m00 = -m00;
-			m01 = -m01;
-		}
-		if (flipY != yDown) {
-			m10 = -m10;
-			m11 = -m11;
-		}
+		setX(bone.getX());
+		setY(bone.getY());
+		setRotation(bone.getRotation());
+		setScaleX(bone.getScaleX());
+		setScaleY(bone.getScaleY());
 	}
 
 	public void setToSetupPose() {
 		BoneData data = this.data;
-		x = data.x;
-		y = data.y;
-		rotation = data.rotation;
-		scaleX = data.scaleX;
-		scaleY = data.scaleY;
+
+		setX(data.x);
+		setY(data.y);
+		setRotation(data.rotation);
+		setScaleX(data.scaleX);
+		setScaleY(data.scaleY);
 	}
 
 	public BoneData getData() {
@@ -130,82 +94,70 @@ public class Bone {
 	}
 
 	public float getX() {
-		return x;
+		return layers.size() > 0 ? layers.get(0).tx() : 0f;
 	}
 
 	public void setX(float x) {
-		this.x = x;
+		for (GroupLayer temp : layers) {
+			temp.setTx(x);
+		}
 	}
 
 	public float getY() {
-		return y;
+		return layers.size() > 0 ? layers.get(0).ty() : 0f;
 	}
 
 	public void setY(float y) {
-		this.y = y;
+		for (GroupLayer temp : layers) {
+			temp.setTy(y);
+		}
 	}
 
 	public float getRotation() {
-		return rotation;
+		return FloatMath.toDegrees(layers.size() > 0 ? layers.get(0).rotation() : 0f);
 	}
 
-	public void setRotation(float rotation) {
-		this.rotation = rotation;
+	public void setRotation(float degrees) {
+		float rad = FloatMath.toRadians(degrees);
+		for (GroupLayer temp : layers) {
+			temp.setRotation(rad);
+		}
 	}
 
 	public float getScaleX() {
-		return scaleX;
+		return layers.size() > 0 ? layers.get(0).scaleX() : 0f;
 	}
 
 	public void setScaleX(float scaleX) {
-		this.scaleX = scaleX;
+		for (GroupLayer temp : layers) {
+			temp.setScaleX(scaleX);
+		}
 	}
 
 	public float getScaleY() {
-		return scaleY;
+		return layers.size() > 0 ? layers.get(0).scaleY() : 0f;
 	}
 
 	public void setScaleY(float scaleY) {
-		this.scaleY = scaleY;
-	}
-
-	public float getM00() {
-		return m00;
-	}
-
-	public float getM01() {
-		return m01;
-	}
-
-	public float getM10() {
-		return m10;
-	}
-
-	public float getM11() {
-		return m11;
-	}
-
-	public float getWorldX() {
-		return worldX;
-	}
-
-	public float getWorldY() {
-		return worldY;
-	}
-
-	public float getWorldRotation() {
-		return worldRotation;
-	}
-
-	public float getWorldScaleX() {
-		return worldScaleX;
-	}
-
-	public float getWorldScaleY() {
-		return worldScaleY;
+		for (GroupLayer temp : layers) {
+			temp.setScaleY(scaleY);
+		}
 	}
 
 	public String toString() {
 		return data.name;
 	}
+
+	public void addGroupLayer(final GroupLayer layer) {
+		if (layers.size() > 0) {
+			GroupLayer temp = layers.get(0);
+			layer.setTx(temp.tx());
+			layer.setTy(temp.ty());
+			layer.setRotation(temp.rotation());
+			layer.setScaleX(temp.scaleX());
+			layer.setScaleY(temp.scaleY());
+		}
+		layers.add(layer);
+	}
+
 }

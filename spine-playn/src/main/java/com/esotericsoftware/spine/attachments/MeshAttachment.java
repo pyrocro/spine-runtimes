@@ -30,7 +30,6 @@
 
 package com.esotericsoftware.spine.attachments;
 
-import com.esotericsoftware.spine.Bone;
 import com.esotericsoftware.spine.Slot;
 
 /** Attachment that displays a texture region. */
@@ -74,19 +73,20 @@ public class MeshAttachment extends Attachment {
 	}
 
 	public void computeWorldVertices(float x, float y, Slot slot, float[] worldVertices) {
-		Bone bone = slot.getBone();
-		x += bone.getWorldX();
-		y += bone.getWorldY();
-		float m00 = bone.getM00(), m01 = bone.getM01(), m10 = bone.getM10(), m11 = bone.getM11();
-		float[] vertices = this.vertices;
-		if (slot.getAttachmentVerticesCount() == vertices.length)
-			vertices = slot.getAttachmentVertices();
-		for (int i = 0, n = vertices.length; i < n; i += 2) {
-			float vx = vertices[i];
-			float vy = vertices[i + 1];
-			worldVertices[i] = vx * m00 + vy * m01 + x;
-			worldVertices[i + 1] = vx * m10 + vy * m11 + y;
-		}
+		// FIXME
+		// Bone bone = slot.getBone();
+		// x += bone.getWorldX();
+		// y += bone.getWorldY();
+		// float m00 = bone.getM00(), m01 = bone.getM01(), m10 = bone.getM10(), m11 = bone.getM11();
+		// float[] vertices = this.vertices;
+		// if (slot.getAttachmentVerticesCount() == vertices.length)
+		// vertices = slot.getAttachmentVertices();
+		// for (int i = 0, n = vertices.length; i < n; i += 2) {
+		// float vx = vertices[i];
+		// float vy = vertices[i + 1];
+		// worldVertices[i] = vx * m00 + vy * m01 + x;
+		// worldVertices[i + 1] = vx * m10 + vy * m11 + y;
+		// }
 	}
 
 	public float[] getVertices() {

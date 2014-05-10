@@ -30,7 +30,11 @@
 
 package com.esotericsoftware.spine;
 
+import playn.core.GroupLayer;
+import playn.core.ImageLayer;
+
 import com.esotericsoftware.spine.attachments.Attachment;
+import com.esotericsoftware.spine.attachments.RegionAttachment;
 
 public class Slot {
 	final SlotData data;
@@ -38,7 +42,7 @@ public class Slot {
 	private final Skeleton skeleton;
 	float r, g, b, a;
 
-	Attachment attachment;
+	private Attachment attachment;
 	private float attachmentTime;
 	private float[] attachmentVertices = new float[0];
 	int attachmentVerticesCount;
@@ -143,9 +147,31 @@ public class Slot {
 	public void setAttachment(Attachment attachment) {
 		if (this.attachment == attachment)
 			return;
+
+		GroupLayer parent = null;
+
+		// FIXME Remove old attachment renderer
+		if (this.attachment != null && this.attachment instanceof RegionAttachment) {
+			ImageLayer oldLayer = ((RegionAttachment) this.attachment).getRendererObject();
+			if (oldLayer.parent() != null) {
+				parent = oldLayer.parent();
+				parent.remove(oldLayer);
+			}
+		}
+
 		this.attachment = attachment;
 		attachmentTime = skeleton.time;
 		attachmentVerticesCount = 0;
+
+		// FIXME Add new attachment renderer
+		if (this.attachment != null && this.attachment instanceof RegionAttachment) {
+
+			if (parent == null) {
+				parent = Utils.createBoneGoupLayerHierarchy(skeleton, bone);
+			}
+
+			parent.add(((RegionAttachment) this.attachment).getRendererObject());
+		}
 	}
 
 	public void setAttachmentTime(float time) {

@@ -50,24 +50,25 @@ public class Atlas {
 	 * Use SpineLoader.getAtlas(...) instead
 	 */
 	Atlas(final String path, final TextureLoader textureLoader, final Callback<Atlas> callback) {
-		if (textureLoader == null)
+		if (textureLoader == null) {
 			throw new IllegalArgumentException("textureLoader cannot be null.");
+		}
 		this.textureLoader = textureLoader;
 
 		// Load asynchronously the content of the atlas file.
-		PlayN.assets().getBytes(path, new Callback<byte[]>() {
+		PlayN.assets().getText(path, new Callback<String>() {
 
 			@Override
-			public void onFailure(Throwable cause) {
+			public void onFailure(final Throwable cause) {
 				callback.onFailure(cause);
 			}
 
 			@Override
-			public void onSuccess(byte[] result) {
+			public void onSuccess(final String result) {
 
 				// Data loaded, now parse atlas file.
-				BufferedReader reader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(result)));
-				load(reader, null, FilenameUtils.getPath(path), callback);
+				final BufferedReader reader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(result.getBytes())));
+				Atlas.this.load(reader, null, FilenameUtils.getPath(path), callback);
 			}
 		});
 	}
@@ -75,15 +76,15 @@ public class Atlas {
 	/**
 	 * Copy constructor
 	 */
-	public Atlas(ArrayList<AtlasPage> pages, ArrayList<AtlasRegion> regions) {
+	public Atlas(final ArrayList<AtlasPage> pages, final ArrayList<AtlasRegion> regions) {
 		this.pages = pages;
 		this.regions = regions;
 		this.textureLoader = null;
 	}
 
-	private void load(final BufferedReader reader, AtlasPage page, final String imagesDir, final Callback<Atlas> callback) {
+	private void load(final BufferedReader reader, final AtlasPage page, final String imagesDir, final Callback<Atlas> callback) {
 		try {
-			String line = reader.readLine();
+			final String line = reader.readLine();
 
 			// EOF
 			if (line == null) {
@@ -93,25 +94,25 @@ public class Atlas {
 
 			// Try to continue reading file, using a empty AtlasPage
 			else if (line.trim().length() == 0) {
-				load(reader, null, imagesDir, callback);
+				this.load(reader, null, imagesDir, callback);
 			}
 
 			// Load a new AtlasPage
 			else if (page == null) {
-				loadPage(line, reader, imagesDir, new Callback<AtlasPage>() {
+				this.loadPage(line, reader, imagesDir, new Callback<AtlasPage>() {
 
 					@Override
-					public void onFailure(Throwable cause) {
+					public void onFailure(final Throwable cause) {
 						callback.onFailure(cause);
 					}
 
 					@Override
-					public void onSuccess(AtlasPage result) {
+					public void onSuccess(final AtlasPage result) {
 
 						// AtlasPage successfully loaded, keep reading
 						try {
-							load(reader, result, imagesDir, callback);
-						} catch (Throwable cause) {
+							Atlas.this.load(reader, result, imagesDir, callback);
+						} catch (final Throwable cause) {
 							callback.onFailure(cause);
 						}
 					}
@@ -120,19 +121,19 @@ public class Atlas {
 
 			// Load AtlasRegion
 			else {
-				AtlasRegion region = new AtlasRegion();
+				final AtlasRegion region = new AtlasRegion();
 				region.name = line;
 				region.page = page;
 
-				region.rotate = Boolean.valueOf(readValue(reader));
+				region.rotate = Boolean.valueOf(Atlas.readValue(reader));
 
-				readTuple(reader);
-				int x = Integer.parseInt(tuple[0]);
-				int y = Integer.parseInt(tuple[1]);
+				Atlas.readTuple(reader);
+				final int x = Integer.parseInt(tuple[0]);
+				final int y = Integer.parseInt(tuple[1]);
 
-				readTuple(reader);
-				int width = Integer.parseInt(tuple[0]);
-				int height = Integer.parseInt(tuple[1]);
+				Atlas.readTuple(reader);
+				final int width = Integer.parseInt(tuple[0]);
+				final int height = Integer.parseInt(tuple[1]);
 
 				region.u = x / (float) page.width;
 				region.v = y / (float) page.height;
@@ -148,100 +149,104 @@ public class Atlas {
 				region.width = Math.abs(width);
 				region.height = Math.abs(height);
 
-				if (readTuple(reader) == 4) { // split is optional
+				if (Atlas.readTuple(reader) == 4) { // split is optional
 					region.splits = new int[] { Integer.parseInt(tuple[0]), Integer.parseInt(tuple[1]), Integer.parseInt(tuple[2]),
 							Integer.parseInt(tuple[3]) };
 
-					if (readTuple(reader) == 4) { // pad is optional, but only present with splits
+					if (Atlas.readTuple(reader) == 4) { // pad is optional, but only present with splits
 						region.pads = new int[] { Integer.parseInt(tuple[0]), Integer.parseInt(tuple[1]), Integer.parseInt(tuple[2]),
 								Integer.parseInt(tuple[3]) };
 
-						readTuple(reader);
+						Atlas.readTuple(reader);
 					}
 				}
 
 				region.originalWidth = Integer.parseInt(tuple[0]);
 				region.originalHeight = Integer.parseInt(tuple[1]);
 
-				readTuple(reader);
+				Atlas.readTuple(reader);
 				region.offsetX = Integer.parseInt(tuple[0]);
 				region.offsetY = Integer.parseInt(tuple[1]);
 
-				region.index = Integer.parseInt(readValue(reader));
+				region.index = Integer.parseInt(Atlas.readValue(reader));
 
-				regions.add(region);
+				this.regions.add(region);
 
 				// Keep reading...
-				load(reader, page, imagesDir, callback);
+				this.load(reader, page, imagesDir, callback);
 			}
-		} catch (Throwable cause) {
+		} catch (final Throwable cause) {
 			callback.onFailure(cause);
 		}
 	}
 
-	private void loadPage(String line, BufferedReader reader, String imagesDir, final Callback<AtlasPage> callback) {
+	private void loadPage(final String line, final BufferedReader reader, final String imagesDir, final Callback<AtlasPage> callback) {
 		try {
 			final AtlasPage page = new AtlasPage();
 			page.name = line;
 
-			if (readTuple(reader) == 2) { // size is only optional for an atlas packed with an old TexturePacker.
+			if (Atlas.readTuple(reader) == 2) { // size is only optional for an atlas packed with an old TexturePacker.
 				page.width = Integer.parseInt(tuple[0]);
 				page.height = Integer.parseInt(tuple[1]);
-				readTuple(reader);
+				Atlas.readTuple(reader);
 			}
 			page.format = Format.valueOf(tuple[0]);
 
-			readTuple(reader);
+			Atlas.readTuple(reader);
 			page.minFilter = TextureFilter.valueOf(tuple[0]);
 			page.magFilter = TextureFilter.valueOf(tuple[1]);
 
-			String direction = readValue(reader);
+			final String direction = Atlas.readValue(reader);
 			page.uWrap = TextureWrap.ClampToEdge;
 			page.vWrap = TextureWrap.ClampToEdge;
-			if (direction.equals("x"))
+			if (direction.equals("x")) {
 				page.uWrap = TextureWrap.Repeat;
-			else if (direction.equals("y"))
+			} else if (direction.equals("y")) {
 				page.vWrap = TextureWrap.Repeat;
-			else if (direction.equals("xy"))
+			} else if (direction.equals("xy")) {
 				page.uWrap = page.vWrap = TextureWrap.Repeat;
+			}
 
 			// Load texture
-			textureLoader.load(page, FilenameUtils.concat(imagesDir, line), new Callback<Void>() {
+			this.textureLoader.load(page, FilenameUtils.concat(imagesDir, line), new Callback<Void>() {
 				@Override
-				public void onFailure(Throwable cause) {
+				public void onFailure(final Throwable cause) {
 					callback.onFailure(cause);
 				}
 
 				@Override
-				public void onSuccess(Void result) {
-					pages.add(page);
+				public void onSuccess(final Void result) {
+					Atlas.this.pages.add(page);
 					callback.onSuccess(page);
 				}
 			});
-		} catch (Throwable cause) {
+		} catch (final Throwable cause) {
 			callback.onFailure(cause);
 		}
 	}
 
-	static String readValue(BufferedReader reader) throws IOException {
-		String line = reader.readLine();
-		int colon = line.indexOf(':');
-		if (colon == -1)
+	static String readValue(final BufferedReader reader) throws IOException {
+		final String line = reader.readLine();
+		final int colon = line.indexOf(':');
+		if (colon == -1) {
 			throw new RuntimeException("Invalid line: " + line);
+		}
 		return line.substring(colon + 1).trim();
 	}
 
 	/** Returns the number of tuple values read (1, 2 or 4). */
-	static int readTuple(BufferedReader reader) throws IOException {
-		String line = reader.readLine();
-		int colon = line.indexOf(':');
-		if (colon == -1)
+	static int readTuple(final BufferedReader reader) throws IOException {
+		final String line = reader.readLine();
+		final int colon = line.indexOf(':');
+		if (colon == -1) {
 			throw new RuntimeException("Invalid line: " + line);
+		}
 		int i = 0, lastMatch = colon + 1;
 		for (i = 0; i < 3; i++) {
-			int comma = line.indexOf(',', lastMatch);
-			if (comma == -1)
+			final int comma = line.indexOf(',', lastMatch);
+			if (comma == -1) {
 				break;
+			}
 			tuple[i] = line.substring(lastMatch, comma).trim();
 			lastMatch = comma + 1;
 		}
@@ -250,9 +255,9 @@ public class Atlas {
 	}
 
 	public void flipV() {
-		int rsize = regions.size();
+		final int rsize = this.regions.size();
 		for (int i = 0; i < rsize; i++) {
-			AtlasRegion region = regions.get(i);
+			final AtlasRegion region = this.regions.get(i);
 			region.v = 1 - region.v;
 			region.v2 = 1 - region.v2;
 		}
@@ -261,20 +266,24 @@ public class Atlas {
 	// / <summary>Returns the first region found with the specified name. This method uses string comparison to find the region, so the result
 	// / should be cached rather than calling this method multiple times.</summary>
 	// / <returns>The region, or null.</returns>
-	public AtlasRegion findRegion(String name) {
-		int rsize = regions.size();
-		for (int i = 0; i < rsize; i++)
-			if (regions.get(i).name.equals(name))
-				return regions.get(i);
+	public AtlasRegion findRegion(final String name) {
+		final int rsize = this.regions.size();
+		for (int i = 0; i < rsize; i++) {
+			if (this.regions.get(i).name.equals(name)) {
+				return this.regions.get(i);
+			}
+		}
 		return null;
 	}
 
 	public void dispose() {
-		if (textureLoader == null)
+		if (this.textureLoader == null) {
 			return;
-		int psize = pages.size();
-		for (int i = 0; i < psize; i++)
-			textureLoader.unload(pages.get(i).rendererObject);
+		}
+		final int psize = this.pages.size();
+		for (int i = 0; i < psize; i++) {
+			this.textureLoader.unload(this.pages.get(i).rendererObject);
+		}
 	}
 
 	public enum Format {
@@ -314,9 +323,9 @@ public class Atlas {
 	}
 
 	public interface TextureLoader {
-		void load(AtlasPage page, String path, Callback<Void> callback);
+		void load(final AtlasPage page, final String path, final Callback<Void> callback);
 
-		void unload(Object texture);
+		void unload(final Object texture);
 	}
 
 }
