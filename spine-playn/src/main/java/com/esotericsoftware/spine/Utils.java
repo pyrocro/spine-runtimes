@@ -30,27 +30,53 @@
 
 package com.esotericsoftware.spine;
 
-import playn.core.Game;
+import playn.core.GroupLayer;
+import playn.core.Layer;
 import playn.core.PlayN;
-import playn.java.JavaPlatform;
 
-public abstract class ATest extends Game.Default {
+import com.esotericsoftware.spine.attachments.RegionAttachment;
 
-	// Default game update rate, in ms.
-	private static final int UPDATE_RATE = 25;
+/**
+ * Some utility methods.
+ * 
+ * @author mbarbeaux
+ */
+public class Utils {
 
-	public ATest() {
-		super(UPDATE_RATE);
+	public static final GroupLayer createBoneGoupLayerHierarchy(Skeleton skeleton, Bone current) {
+		GroupLayer groupLayer = PlayN.graphics().createGroupLayer();
+		current.addGroupLayer(groupLayer);
+
+		if (current.parent != null) {
+			GroupLayer parent = createBoneGoupLayerHierarchy(skeleton, current.parent);
+			parent.add(groupLayer);
+		} else {
+			skeleton.root.add(groupLayer);
+		}
+
+		return groupLayer;
 	}
 
-	public static void run(final ATest test) {
-		final JavaPlatform.Config config = new JavaPlatform.Config();
-		config.width = 1024;
-		config.height = 768;
-		final JavaPlatform platform = JavaPlatform.register(config);
-		platform.setTitle(test.getClass().getSimpleName() + " PlayN Spine");
-		platform.assets().setPathPrefix("");
-		PlayN.run(test);
+	public static final void updateDrawOrder(Skeleton skeleton) {
+		if (skeleton.drawOrder != null) {
+			int depth = 1;
+			for (Slot slot : skeleton.drawOrder) {
+
+				// FIXME
+				if (slot.getAttachment() != null && slot.getAttachment() instanceof RegionAttachment) {
+					Layer layer = ((RegionAttachment) slot.getAttachment()).getRendererObject();
+					while (layer != null) {
+						layer.setDepth(depth);
+						layer = layer.parent();
+						if (layer == skeleton.root) {
+							layer = null;
+						}
+					}
+				}
+
+				depth++;
+			}
+		}
 	}
 
 }

@@ -30,28 +30,36 @@
 
 package com.esotericsoftware.spine;
 
-import java.util.ArrayList;
-
-import playn.core.ImageLayer;
-import playn.core.InternalTransform;
+import playn.core.Color;
+import playn.core.Keyboard;
+import playn.core.Keyboard.Event;
+import playn.core.Keyboard.TypedEvent;
+import playn.core.Layer;
 import playn.core.PlayN;
 import playn.core.util.Callback;
+import tripleplay.util.Hud;
 
 import com.esotericsoftware.spine.attachments.RegionAttachment;
 
-public class SimpleTest1 extends ATest {
+public class SimpleTest1 extends ATest implements Keyboard.Listener {
 
 	Atlas altas;
 	Skeleton skeleton;
 	AnimationState state;
 	boolean loaded = false;
 
+	private Hud.Stock hud;
+
 	public void init() {
+		hud = new Hud.Stock();
+		hud.layer.setDepth(Short.MAX_VALUE);
+		PlayN.graphics().rootLayer().add(hud.layer);
+
 		final String atlasPath = "spineboy/spineboy.atlas";
 		final String skeletonPath = "spineboy/spineboy.json";
 
 		// Load the Atlas.
-		SpineLoader.getAtlas(atlasPath, PlayN.graphics().rootLayer(), new Callback<Atlas>() {
+		SpineLoader.getAtlas(atlasPath, new Callback<Atlas>() {
 			@Override
 			public void onFailure(Throwable cause) {
 				PlayN.log().error("Error while loading Atlas " + atlasPath, cause);
@@ -72,20 +80,30 @@ public class SimpleTest1 extends ATest {
 					public void onSuccess(final Skeleton result) {
 						skeleton = result; // Skeleton holds skeleton state (bone positions, slot attachments, etc).
 
-						skeleton.setX(PlayN.graphics().width() / 2);
-						skeleton.setY(PlayN.graphics().height() / 2);
+						skeleton.setX(PlayN.graphics().width() / 2f);
+						skeleton.setY(PlayN.graphics().height() - 20);
 
-						AnimationStateData stateData = new AnimationStateData(skeleton.getData()); // Defines mixing (crossfading) between animations.
+						final AnimationStateData stateData = new AnimationStateData(skeleton.getData()); // Defines mixing (crossfading) between
+																											// animations.
 						stateData.setMix("walk", "jump", 0.2f);
 						stateData.setMix("jump", "walk", 0.2f);
+
+						stateData.setMix("run", "jump", 0.2f);
+						stateData.setMix("jump", "run", 0.2f);
+
+						stateData.setMix("walk", "run", 0.4f);
+						stateData.setMix("run", "walk", 0.4f);
 
 						state = new AnimationState(stateData); // Holds the animation state for a skeleton (current animation, time, etc).
 						state.setTimeScale(0.5f); // Slow all animations down to 50% speed.
 						state.setAnimation(0, "walk", true);
-						state.addAnimation(0, "jump", false, 2); // Jump after 2 seconds.
-						state.addAnimation(0, "walk", true, 0); // Run after the jump.
+						// state.addAnimation(0, "jump", false, 2); // Jump after 2 seconds.
+						// state.addAnimation(0, "run", true, 0); // Run after the jump.
 
-						skeleton.updateWorldTransform();
+						// Add skeleton layer to the PlayN scene graph.
+						PlayN.graphics().rootLayer().add(skeleton.rootLayer());
+
+						PlayN.keyboard().setListener(SimpleTest1.this);
 						loaded = true;
 					}
 				});
@@ -96,14 +114,18 @@ public class SimpleTest1 extends ATest {
 	@Override
 	public void update(int delta) {
 		if (loaded) {
+			hud.update(delta);
 		}
 	}
 
 	int lastTick = -1;
+	boolean premultipliedAlpha = true;
 
 	@Override
 	public void paint(float alpha) {
 		if (loaded) {
+			hud.paint();
+
 			float delta = 0f;
 			int tick = PlayN.tick();
 			if (lastTick != -1) {
@@ -111,63 +133,62 @@ public class SimpleTest1 extends ATest {
 			}
 			lastTick = tick;
 
-			state.update(delta);
-			state.apply(skeleton);
-			skeleton.updateWorldTransform();
+			// FIXME premultiplied alpha ???
+			if (skeleton.drawOrder != null) {
+				for (Slot slot : skeleton.drawOrder) {
+					if (slot.getAttachment() != null && slot.getAttachment() instanceof RegionAttachment) {
+						RegionAttachment regionAttachment = ((RegionAttachment) slot.getAttachment());
 
-			ArrayList<Slot> drawOrder = skeleton.drawOrder;
-			for (Slot slot : drawOrder) {
-				if (slot.getAttachment() != null && slot.getAttachment() instanceof RegionAttachment) {
-					RegionAttachment attachment = (RegionAttachment) slot.getAttachment();
-					ImageLayer layer = attachment.getRendererObject();
+						float a = skeleton.getA() * slot.getA() * regionAttachment.getA() * 255f;
+						float multiplier = premultipliedAlpha ? a : 255f;
 
-					float[] vertices = new float[8];
-					attachment.computeWorldVertices(skeleton.x, skeleton.y, slot.getBone(), vertices);
-					// item.vertexTL.Position.X = vertices[RegionAttachment.X1];
-					// item.vertexTL.Position.Y = vertices[RegionAttachment.Y1];
-					// item.vertexTL.Position.Z = 0;
-					// item.vertexBL.Position.X = vertices[RegionAttachment.X2];
-					// item.vertexBL.Position.Y = vertices[RegionAttachment.Y2];
-					// item.vertexBL.Position.Z = 0;
-					// item.vertexBR.Position.X = vertices[RegionAttachment.X3];
-					// item.vertexBR.Position.Y = vertices[RegionAttachment.Y3];
-					// item.vertexBR.Position.Z = 0;
-					// item.vertexTR.Position.X = vertices[RegionAttachment.X4];
-					// item.vertexTR.Position.Y = vertices[RegionAttachment.Y4];
-					// item.vertexTR.Position.Z = 0;
-					//
-					float[] uvs = attachment.getUvs();
-					// item.vertexTL.TextureCoordinate.X = uvs[RegionAttachment.X1];
-					// item.vertexTL.TextureCoordinate.Y = uvs[RegionAttachment.Y1];
-					// item.vertexBL.TextureCoordinate.X = uvs[RegionAttachment.X2];
-					// item.vertexBL.TextureCoordinate.Y = uvs[RegionAttachment.Y2];
-					// item.vertexBR.TextureCoordinate.X = uvs[RegionAttachment.X3];
-					// item.vertexBR.TextureCoordinate.Y = uvs[RegionAttachment.Y3];
-					// item.vertexTR.TextureCoordinate.X = uvs[RegionAttachment.X4];
-					// item.vertexTR.TextureCoordinate.Y = uvs[RegionAttachment.Y4];
-
-					int top = RegionAttachment.Y3;
-					int left = RegionAttachment.X1;
-					int right = RegionAttachment.X3;
-					int bottom = RegionAttachment.Y1;
-					// PlayN.log().debug(
-					// vertices[left] + " - " + vertices[top] + " - " + vertices[right] + " - " + vertices[bottom] + " - " + uvs[left] + " - "
-					// + uvs[top] + " - " + uvs[right] + " - " + uvs[bottom]);
-
-					PlayN.graphics()
-							.ctx()
-							.quadShader(null)
-							.prepareTexture(layer.image().ensureTexture(), layer.tint())
-							.addQuad((InternalTransform) layer.transform(), vertices[left], vertices[top], vertices[right], vertices[bottom],
-									uvs[left], uvs[top], uvs[right], uvs[bottom]);
-
+						Layer layer = ((RegionAttachment) slot.getAttachment()).getRendererObject();
+						layer.setTint(Color.argb((int) a, (int) (skeleton.getR() * slot.getR() * regionAttachment.getR() * multiplier),
+								(int) (skeleton.getG() * slot.getG() * regionAttachment.getG() * multiplier), (int) (skeleton.getB() * slot.getB()
+										* regionAttachment.getB() * multiplier)));
+					}
 				}
 			}
+
+			state.update(delta);
+			state.apply(skeleton);
 		}
 	}
 
 	public static final void main(final String[] args) {
 		run(new SimpleTest1());
+	}
+
+	boolean running = false;
+
+	@Override
+	public void onKeyDown(Event event) {
+		switch (event.key()) {
+		case UP:
+			state.setAnimation(0, "jump", false);
+			state.addAnimation(0, running ? "run" : "walk", true, 0);
+			break;
+		case LEFT:
+			skeleton.setFlipX(true);
+			break;
+		case RIGHT:
+			skeleton.setFlipX(false);
+			break;
+		case SPACE:
+			state.setAnimation(0, running ? "walk" : "run", true);
+			running = !running;
+			break;
+		default:
+			break;
+		}
+	}
+
+	@Override
+	public void onKeyTyped(TypedEvent event) {
+	}
+
+	@Override
+	public void onKeyUp(Event event) {
 	}
 
 }
